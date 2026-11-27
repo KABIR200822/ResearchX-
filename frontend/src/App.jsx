@@ -89,4 +89,4 @@ function Landing({onLaunch}) {
   </div>;
 }
 
-export default function App(){const [workspace,setWorkspace]=useState(false);return workspace?<><button className="rx-back" onClick={()=>setWorkspace(false)}>← Back to ResearchX site</button><Workspace/></>:<Landing onLaunch={()=>{setWorkspace(true);window.scrollTo({top:0,behavior:'instant'});}}/>;}
+export default function App(){const [workspace,setWorkspace]=useState(false);return workspace?<Workspace/>:<Landing onLaunch={()=>{setWorkspace(true);window.scrollTo({top:0,behavior:'instant'});}}/>;}

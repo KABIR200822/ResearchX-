@@ -1,43 +1,107 @@
-import {useState} from 'react';
-import {Microscope,Search,Plus,Clock3,FileText,Settings,PanelLeftClose,ChevronDown,ArrowUpRight,Download,Share2,BookOpen,ShieldCheck,Layers3,Sparkles,Menu,X,ExternalLink,CheckCircle2,AlertTriangle,CircleDot} from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ArrowUpRight, Atom, BookOpen, Check, ChevronDown, CircleHelp, Compass, FileText, FolderOpen, Globe2, Grid2X2, Lightbulb, Mic, Palette, Paperclip, Plus, Search, Send, Sparkles, Table2, X, Zap, PanelLeftClose, MessageCirclePlus, Smile, Plug, AlarmClock, Presentation, Box, MoreHorizontal, FolderPlus, Download, UserCircle2 } from 'lucide-react';
 
-const initialSources=[
- {id:'S01',type:'Research paper',title:'The effects of generative AI on software developer productivity',by:'Journal of Software Engineering · 2025',tag:'Academic',color:'blue'},
- {id:'S02',type:'Research paper',title:'Large language models and the future of programming work',by:'arXiv preprint · 2024',tag:'Academic',color:'blue'},
- {id:'S03',type:'Industry report',title:'AI at Work: The impact on software development teams',by:'Industry Research Group · 2025',tag:'Report',color:'violet'},
- {id:'S04',type:'Web article',title:'How AI coding assistants are changing developer workflows',by:'Technology Review · 2025',tag:'Web',color:'amber'}
+const capabilities = [
+  { label: 'Deep Research', icon: Search, prompt: 'Research this topic in depth, compare credible sources and produce a cited report.' },
+  { label: 'Build', icon: Zap, prompt: 'Help me design and build a solution for this research problem.' },
+  { label: 'Docs', icon: FileText, prompt: 'Create a structured research document about: ' },
+  { label: 'Sheets', icon: Table2, prompt: 'Organise this research into a comparison table: ' },
+  { label: 'Slides', icon: BookOpen, prompt: 'Turn this research into a presentation outline about: ' },
 ];
-const sampleFindings=[
- {n:'01',title:'Productivity gains depend on task complexity',body:'The reviewed material suggests that AI assistance can accelerate routine implementation tasks, while benefits are less consistent for complex or unfamiliar codebases.',sources:'S01, S02',confidence:'High'},
- {n:'02',title:'Human review remains essential',body:'Sources emphasize that generated code still requires developer oversight, particularly for correctness, security and maintainability.',sources:'S02, S04',confidence:'High'},
- {n:'03',title:'Team-level impact is not uniform',body:'Reported outcomes vary by experience level, workflow and the type of development task being measured.',sources:'S01, S03',confidence:'Medium'}
-];
-function Workspace(){
- const [active,setActive]=useState('Overview'),[query,setQuery]=useState('The impact of generative AI on software engineering productivity'),[running,setRunning]=useState(false),[searched,setSearched]=useState(true),[tab,setTab]=useState('Findings'),[mobile,setMobile]=useState(false);
- const [sources,setSources]=useState(initialSources);
- const run=()=>{if(!query.trim())return;setRunning(true);setSearched(false);setTimeout(()=>{setRunning(false);setSearched(true)},2200)};
- const nav=[['Overview',Layers3],['My research',BookOpen],['Saved sources',FileText]];
- return <div className="min-h-screen bg-[#f6f7f9] text-slate-800">
-  <aside className={`${mobile?'translate-x-0':'-translate-x-full'} fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0`}>
-   <div className="flex h-[76px] items-center justify-between border-b border-slate-100 px-5"><div className="flex items-center gap-3"><div className="rounded-xl bg-slate-950 p-2 text-white"><Microscope size={19}/></div><div><div className="font-semibold tracking-tight">ResearchX</div><div className="text-[10px] tracking-[.16em] text-slate-400">RESEARCH WORKSPACE</div></div></div><button className="lg:hidden" onClick={()=>setMobile(false)}><X size={18}/></button></div>
-   <div className="px-4 pt-6"><button onClick={()=>{setActive('Overview');setMobile(false)}} className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-slate-800"><Plus size={16}/> New research</button></div>
-   <div className="px-4 pt-8"><p className="px-3 pb-3 text-[10px] font-semibold tracking-[.16em] text-slate-400">WORKSPACE</p>{nav.map(([name,Icon])=><button key={name} onClick={()=>{setActive(name);setMobile(false)}} className={`mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${active===name?'bg-slate-100 font-semibold text-slate-900':'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}><Icon size={17}/>{name}</button>)}</div>
-   <div className="mt-8 px-4"><p className="px-3 pb-3 text-[10px] font-semibold tracking-[.16em] text-slate-400">RECENT RESEARCH</p>{['AI in software engineering','Renewable energy storage','CRISPR gene editing'].map((x,i)=><button key={x} onClick={()=>{setQuery(x);setActive('Overview')}} className="mb-1 flex w-full items-center gap-3 truncate rounded-lg px-3 py-2 text-left text-xs text-slate-500 hover:bg-slate-50"><Clock3 size={14} className="shrink-0"/><span className="truncate">{x}</span></button>)}</div>
-   <div className="mt-auto border-t border-slate-100 p-4"><button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-50"><Settings size={16}/> Settings</button><div className="mt-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold">RX</div><div><div className="text-xs font-semibold">Researcher</div><div className="text-[10px] text-slate-400">Free workspace</div></div><ChevronDown size={15} className="ml-auto text-slate-400"/></div></div>
-  </aside>
-  {mobile&&<button aria-label="Close menu" className="fixed inset-0 z-30 bg-black/20 lg:hidden" onClick={()=>setMobile(false)}/>}
-  <div className="lg:pl-[248px]"><header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200/80 bg-[#f6f7f9]/90 px-5 backdrop-blur-xl md:px-9"><div className="flex items-center gap-3"><button className="lg:hidden" onClick={()=>setMobile(true)}><Menu size={20}/></button><div className="text-sm text-slate-400">Workspace <span className="px-2">/</span><span className="font-medium text-slate-700">{active}</span></div></div><div className="flex items-center gap-3"><span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] text-slate-500 sm:inline-flex">Prototype preview</span><div className="h-8 w-8 rounded-full border border-slate-200 bg-white p-1.5"><Settings size={15} className="text-slate-500"/></div></div></header>
-  <main className="mx-auto max-w-[1280px] px-5 py-9 md:px-9">
-   <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600"><Sparkles size={13}/> Autonomous research, made clear</div><h1 className="text-[32px] font-semibold tracking-[-.04em] text-slate-950 md:text-[40px]">Good research starts<br className="hidden sm:block"/> with a better question.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">Explore a topic, connect evidence across sources, and turn complex information into a research report you can trust.</p></div><div className="flex gap-2"><button className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50"><Clock3 size={14}/> History</button><button className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50"><Settings size={14}/> Preferences</button></div></div>
-   <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_12px_rgba(15,23,42,.025)] md:p-5"><div className="mb-3 flex items-center justify-between"><label className="text-xs font-semibold text-slate-700">Research question</label><span className="text-[10px] text-slate-400">Be specific for better results</span></div><textarea value={query} onChange={e=>setQuery(e.target.value)} rows={2} placeholder="What would you like to investigate?" className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-6 text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white"/><div className="mt-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div className="flex flex-wrap items-center gap-2"><span className="text-[10px] text-slate-400">SOURCES</span>{['Academic papers','Web research','Reports'].map(x=><span key={x} className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] text-slate-600">{x}</span>)}</div><button onClick={run} disabled={running||!query.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-3 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60">{running?<span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white"/>:<Search size={14}/>} {running?'Preparing research...':'Start deep research'}</button></div></section>
-   {running&&<div className="mt-5 rounded-xl border border-slate-200 bg-white p-5"><div className="mb-3 flex items-center gap-2 text-sm font-semibold"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"/> Research workflow preview</div><div className="grid gap-3 sm:grid-cols-4">{['Discover sources','Analyse evidence','Cross-check claims','Write report'].map((x,i)=><div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600" key={x}><div className="mb-2 text-slate-400">0{i+1}</div>{x}</div>)}</div><p className="mt-3 text-[10px] text-slate-400">This is a UI-only preview. Live AI execution will be connected later.</p></div>}
-   {searched&&!running&&<><div className="mt-8 flex items-center justify-between"><div><div className="text-sm font-semibold text-slate-900">Research workspace</div><div className="mt-1 text-xs text-slate-400">A sample project preview · illustrative content</div></div><div className="flex gap-2"><button className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50" title="Share"><Share2 size={15}/></button><button className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50" title="Download"><Download size={15}/></button></div></div>
-    <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(280px,.85fr)]"><div className="space-y-4"><section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2 text-xs font-semibold text-slate-500"><FileText size={15}/> RESEARCH BRIEF</div><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-700">Sample report</span></div><h2 className="mt-4 text-xl font-semibold tracking-tight text-slate-900">{query}</h2><p className="mt-3 text-sm leading-7 text-slate-600">This workspace demonstrates how ResearchX will organize a research question into evidence, findings, source comparisons and a final report. The displayed findings are sample content and are not generated from your current query.</p><div className="mt-5 grid grid-cols-3 gap-2 border-t border-slate-100 pt-4"><div><div className="text-xl font-semibold">04</div><div className="mt-1 text-[10px] text-slate-400">Sources</div></div><div><div className="text-xl font-semibold">03</div><div className="mt-1 text-[10px] text-slate-400">Key findings</div></div><div><div className="text-xl font-semibold">02</div><div className="mt-1 text-[10px] text-slate-400">Agents planned</div></div></div></section>
-     <section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div className="text-sm font-semibold">Evidence analysis</div><div className="flex rounded-lg bg-slate-100 p-1">{['Findings','Conflicts'].map(t=><button key={t} onClick={()=>setTab(t)} className={`rounded-md px-3 py-1.5 text-[11px] font-medium ${tab===t?'bg-white text-slate-900 shadow-sm':'text-slate-500'}`}>{t}</button>)}</div></div>{tab==='Findings'?<div className="mt-4 space-y-4">{sampleFindings.map(f=><div key={f.n} className="border-t border-slate-100 pt-4 first:border-0 first:pt-0"><div className="flex gap-3"><span className="text-xs font-semibold text-slate-300">{f.n}</span><div className="min-w-0 flex-1"><h3 className="text-sm font-semibold text-slate-800">{f.title}</h3><p className="mt-2 text-xs leading-6 text-slate-500">{f.body}</p><div className="mt-2 flex flex-wrap items-center gap-2"><span className="text-[10px] text-slate-400">Sources: {f.sources}</span><span className={`rounded-full px-2 py-0.5 text-[9px] ${f.confidence==='High'?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{f.confidence} confidence</span></div></div></div></div>)}</div>:<div className="mt-4 rounded-xl border border-amber-100 bg-amber-50/60 p-4"><div className="flex items-center gap-2 text-xs font-semibold text-amber-800"><AlertTriangle size={15}/> Potential disagreement to investigate</div><p className="mt-2 text-xs leading-6 text-amber-900/70">Some sources report productivity improvements, while others describe slower outcomes for complex tasks. ResearchX will compare study methods, populations and task types before treating these as contradictory findings.</p><div className="mt-3 text-[10px] text-amber-800">Illustrative example · Not a verified contradiction</div></div>}</section>
-    </div><div className="space-y-4"><section className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between"><h3 className="text-sm font-semibold">Research sources</h3><span className="text-[10px] text-slate-400">04 found</span></div><div className="mt-4 space-y-3">{sources.map(s=><div key={s.id} className="flex gap-3 border-b border-slate-100 pb-3 last:border-0 last:pb-0"><div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${s.color==='blue'?'bg-blue-50 text-blue-700':s.color==='violet'?'bg-violet-50 text-violet-700':'bg-amber-50 text-amber-700'}`}><FileText size={15}/></div><div className="min-w-0"><div className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">{s.id} · {s.type}</div><div className="mt-1 text-xs font-medium leading-5 text-slate-700">{s.title}</div><div className="mt-1 text-[10px] text-slate-400">{s.by}</div></div></div>)}</div><button onClick={()=>setActive('Saved sources')} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50">View all sources <ArrowUpRight size={13}/></button></section>
-    <section className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="text-sm font-semibold">Research pipeline</h3><div className="mt-4 space-y-4">{[['Researcher','Discover relevant sources'],['Analyst','Extract key evidence'],['Fact-checker','Compare and verify claims'],['Report writer','Synthesize final report']].map(([a,b],i)=><div className="flex items-start gap-3" key={a}><div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500"><CircleDot size={13}/></div><div><div className="text-xs font-semibold text-slate-700">{a}</div><div className="mt-1 text-[10px] text-slate-400">{b}</div></div><span className="ml-auto text-[9px] text-slate-300">0{i+1}</span></div>)}</div><div className="mt-4 rounded-lg bg-slate-50 p-3 text-[10px] leading-5 text-slate-500">Agent execution and live status updates will be connected during backend integration.</div></section></div></div></>}
-   <footer className="mt-12 flex flex-col justify-between gap-2 border-t border-slate-200 pt-5 text-[10px] text-slate-400 sm:flex-row"><span>© 2026 ResearchX · Autonomous Research Workspace</span><span>Frontend prototype · Sample data only</span></footer>
-  </main></div></div>
+
+function Brand({ compact = false }) {
+  return <a className={`rx-brand ${compact ? 'compact' : ''}`} href="#workspace" aria-label="ResearchX home">
+    <span className="rx-brand-symbol"><span/><i/><b/></span>
+    <span className="rx-brand-word">research<span>X</span></span>
+  </a>;
 }
 
-export default Workspace;
+export default function Workspace() {
+  const [query, setQuery] = useState('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mode, setMode] = useState('Balanced');
+  const [modeOpen, setModeOpen] = useState(false);
+  const [taskMode, setTaskMode] = useState('Research');
+  const [activeTool, setActiveTool] = useState('');
+  const [sent, setSent] = useState(false);
+  const [showTips, setShowTips] = useState(false);
+  const [attached, setAttached] = useState([]);
+  const [projectName, setProjectName] = useState('');
+  const [projectOpen, setProjectOpen] = useState(false);
+  const fileRef = useRef(null);
+
+  const submit = () => { if (query.trim()) setSent(true); };
+  const chooseCapability = (item) => { setActiveTool(item.label); setQuery(old => old.trim() ? old : item.prompt); };
+  const reset = () => { setQuery(''); setSent(false); setActiveTool(''); setAttached([]); };
+
+  return <div className={`stitch-workspace ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} id="workspace">
+    <aside className="rx-sidebar">
+      <div className="rx-sidebar-head"><Brand compact/><button className="rx-sidebar-toggle" title="Collapse sidebar" onClick={()=>setSidebarCollapsed(v=>!v)}><PanelLeftClose size={19}/></button></div>
+      <button className="rx-new-chat" onClick={reset}><MessageCirclePlus size={19}/><span>New chat</span><kbd>⌘</kbd><kbd>K</kbd></button>
+      <nav className="rx-sidebar-nav">
+        <button onClick={()=>setShowTips(v=>!v)}><Smile/><span>My Research</span></button>
+        <button onClick={()=>setShowTips(v=>!v)}><Plug/><span>Plugins</span></button>
+        <button onClick={()=>setShowTips(v=>!v)}><AlarmClock/><span>Task Center</span></button>
+        <button onClick={()=>chooseCapability(capabilities[0])}><Lightbulb/><span>Inspiration</span></button>
+        <button onClick={()=>chooseCapability(capabilities[4])}><Presentation/><span>Slides</span></button>
+        <button onClick={()=>chooseCapability(capabilities[1])}><Box/><span>Build</span><i>New</i></button>
+        <button onClick={()=>setShowTips(v=>!v)}><MoreHorizontal/><span>More</span></button>
+      </nav>
+      <div className="rx-sidebar-section"><span>Projects</span><button onClick={()=>setProjectOpen(true)}><FolderPlus/><span>New project</span></button></div>
+      <div className="rx-sidebar-section rx-sidebar-chats"><span>Chats</span><p>Start a new chat to see your research history here.</p></div>
+      <div className="rx-sidebar-footer"><button onClick={()=>setShowTips(v=>!v)}><UserCircle2/><span>Log in</span></button><button className="rx-download" title="Download"><Download/></button></div>
+    </aside>
+    <div className="stitch-main-shell">
+    <header className="stitch-topbar">
+      <nav className="stitch-toplinks">
+        <button onClick={() => setShowTips(v => !v)}><BookOpen size={17}/> Docs</button>
+        <button onClick={() => setProjectOpen(true)}><Grid2X2 size={17}/> Projects</button>
+        <button className="stitch-round" title="Help" onClick={() => setShowTips(v => !v)}><CircleHelp size={18}/></button>
+        <span className="stitch-avatar">R</span>
+      </nav>
+    </header>
+
+    {!sent ? <main className="stitch-home">
+      <button className="stitch-announcement" onClick={() => chooseCapability(capabilities[0])}>
+        <span className="stitch-new">NEW</span><span>Meet your research workspace — from question to breakthrough</span><b>Explore <ArrowUpRight size={15}/></b>
+      </button>
+      <div className="stitch-heading-row">
+        <div><p className="stitch-eyebrow"><span/> YOUR AUTONOMOUS RESEARCH STUDIO</p><h1>Welcome to <em>ResearchX.</em></h1><p className="stitch-subtitle">What are we discovering today?</p></div>
+        <div className="stitch-heading-actions"><button onClick={() => { setTaskMode('Research'); setQuery('Help me explore a new research direction in '); }}><Plus size={16}/> Start with your idea</button><button onClick={reset}><Plus size={16}/> Blank session</button></div>
+      </div>
+
+      <section className="stitch-prompt-card">
+        <textarea value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }} placeholder="Describe what you want to research, compare, understand or create..." rows={4}/>
+        {attached.length > 0 && <div className="stitch-attachments">{attached.map((f,i)=><span key={`${f}-${i}`}><Paperclip size={12}/>{f}<button onClick={()=>setAttached(a=>a.filter((_,j)=>i!==j))}><X size={12}/></button></span>)}</div>}
+        <div className="stitch-prompt-toolbar">
+          <div className="stitch-toolbar-left">
+            <button className="stitch-add-btn" title="Attach files" onClick={() => fileRef.current?.click()}><Plus size={21}/></button>
+            <input ref={fileRef} type="file" multiple hidden onChange={e=>{const fs=Array.from(e.target.files||[]);setAttached(a=>[...a,...fs.map(f=>f.name)]);}}/>
+            <div className="stitch-mode-switch"><button className={taskMode==='Research'?'active':''} onClick={()=>setTaskMode('Research')}><Compass size={15}/> Research</button><button className={taskMode==='Web'?'active':''} onClick={()=>setTaskMode('Web')}><Globe2 size={15}/> Web</button></div>
+          </div>
+          <div className="stitch-toolbar-right">
+            <button className="stitch-tool-icon" title="Style settings" onClick={()=>setShowTips(v=>!v)}><Palette size={17}/></button>
+            <div className="stitch-mode-wrap"><button className="stitch-model-select" onClick={()=>setModeOpen(v=>!v)}><Sparkles size={16}/>{mode}<ChevronDown size={14}/></button>{modeOpen&&<div className="stitch-model-menu">{['Balanced','Deep thinking','Fast'].map(m=><button key={m} onClick={()=>{setMode(m);setModeOpen(false)}}>{m}{mode===m&&<Check size={14}/>}</button>)}</div>}</div>
+            <button className="stitch-tool-icon" title="Voice input"><Mic size={18}/></button>
+            <button className="stitch-submit" disabled={!query.trim()} onClick={submit} title="Start research"><ArrowUpRight size={21}/></button>
+          </div>
+        </div>
+      </section>
+      <div className="stitch-under-prompt"><button onClick={()=>setProjectOpen(true)}><FolderOpen size={16}/>{projectName||'Choose a project'}<ChevronDown size={13}/></button><span>ResearchX can make mistakes. Verify important findings.</span></div>
+
+      {showTips && <div className="stitch-tip-panel"><div><Sparkles size={17}/><b>Make your prompt powerful</b></div><p>Tell ResearchX your goal, preferred sources, scope and the format you want back.</p><button onClick={()=>{setQuery('Investigate [topic] using credible primary sources. Compare the strongest findings, note disagreements and limitations, and deliver a cited report with an executive summary.');setShowTips(false)}}>Use a research prompt <ArrowUpRight size={14}/></button></div>}
+
+      <div className="stitch-capabilities-label">START WITH A CAPABILITY</div>
+      <div className="stitch-capabilities">{capabilities.map(({label,icon:Icon},i)=><button key={label} className={activeTool===label?'active':''} onClick={()=>chooseCapability(capabilities[i])}><span><Icon size={17}/></span>{label}<ArrowUpRight size={13}/></button>)}</div>
+      <div className="stitch-bottom-note"><span className="stitch-orbit"><i/><i/><i/></span><span>Think deeper. Discover more. Build what matters.</span></div>
+    </main> : <main className="stitch-results">
+      <div className="stitch-results-top"><span><Sparkles size={15}/> RESEARCH SESSION</span><button onClick={reset}><Plus size={15}/> New session</button></div>
+      <h1>{query}</h1><div className="stitch-progress"><i/><i/><i/><i/></div>
+      <div className="stitch-agent-grid"><article><Search/><b>Researcher</b><p>Discovering relevant academic and web sources</p><small>01 · DISCOVER</small></article><article><BookOpen/><b>Analyst</b><p>Extracting findings, methods and limitations</p><small>02 · ANALYSE</small></article><article><Atom/><b>Fact-checker</b><p>Cross-checking evidence and contradictions</p><small>03 · VERIFY</small></article><article><FileText/><b>Report writer</b><p>Preparing a structured, cited report</p><small>04 · SYNTHESISE</small></article></div>
+      <p className="stitch-prototype-note">This is a frontend interaction preview. Connect your research APIs to enable live agent execution.</p><div className="stitch-followup"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Refine your research question..."/><button onClick={submit}><Send size={17}/></button></div>
+    </main>}
+
+    </div>
+    {projectOpen && <div className="stitch-modal-backdrop" onClick={()=>setProjectOpen(false)}><div className="stitch-modal" onClick={e=>e.stopPropagation()}><button className="stitch-modal-close" onClick={()=>setProjectOpen(false)}><X/></button><FolderOpen size={25}/><h2>Choose a project</h2><p>Keep your research, sources and reports organised.</p><input value={projectName} onChange={e=>setProjectName(e.target.value)} placeholder="Enter project name"/><button className="stitch-modal-primary" onClick={()=>setProjectOpen(false)}>Save project</button></div></div>}
+  </div>;
+}
