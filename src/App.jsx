@@ -89,4 +89,26 @@ function Landing({onLaunch}) {
   </div>;
 }
 
-export default function App(){const [workspace,setWorkspace]=useState(false);return workspace?<Workspace/>:<Landing onLaunch={()=>{setWorkspace(true);window.scrollTo({top:0,behavior:'instant'});}}/>;}
+function WelcomeNameModal({ onContinue, onClose }) {
+  const [name, setName] = useState('');
+  return <div className="rx-name-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <form className="rx-name-modal" onSubmit={e => { e.preventDefault(); if (name.trim()) onContinue(name.trim()); }}>
+      <span className="rx-pill">WELCOME TO RESEARCHX</span>
+      <h2>Before we begin,<br/><em>what should we call you?</em></h2>
+      <p>Your name will be used to personalise this workspace on this device.</p>
+      <label htmlFor="rx-user-name">Your name</label>
+      <input id="rx-user-name" autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="Enter your name" maxLength={40}/>
+      <button type="submit" disabled={!name.trim()}>Continue to ResearchX <ArrowUpRight size={16}/></button>
+      <button type="button" className="rx-name-cancel" onClick={onClose}>Back to landing page</button>
+    </form>
+  </div>;
+}
+
+export default function App(){
+  const [workspace,setWorkspace]=useState(false);
+  const [showName,setShowName]=useState(false);
+  const [userName,setUserName]=useState(() => { try { return localStorage.getItem('researchx-user-name') || ''; } catch { return ''; } });
+  const launch=()=>{ if(userName){setWorkspace(true);window.scrollTo({top:0,behavior:'instant'});} else setShowName(true); };
+  const continueWithName=(name)=>{setUserName(name);try{localStorage.setItem('researchx-user-name',name);}catch{}setShowName(false);setWorkspace(true);window.scrollTo({top:0,behavior:'instant'});};
+  return <>{workspace?<Workspace userName={userName}/>:<Landing onLaunch={launch}/ >}{showName&&<WelcomeNameModal onContinue={continueWithName} onClose={()=>setShowName(false)}/>}</>;
+}

@@ -56,3 +56,11 @@ Refined generated-report typography with stronger editorial hierarchy, more read
 
 ### v13 — Output typography matched to reference
 Report titles now use a large, heavy, high-contrast sans-serif display style. Supporting copy uses a smaller, muted grey sans-serif style with comfortable line spacing, matching the supplied reference. Workspace controls and layout are unchanged.
+
+
+## v15 — Modular offline agent pipeline
+The four agent roles now run through a modular local pipeline with structured outputs and a stable adapter contract for final API integration. The UI exposes each completed agent's structured output. This remains an offline mock: no web retrieval, PDF text extraction, AI reasoning, factual verification or citations are performed.
+
+
+## v16 — Offline mock evidence pipeline
+Adds a substantive, bundled AI topic demo pack so the Researcher, Analyst, Fact-checker and Report Writer pass structured content between stages. The report now renders explanatory sections and findings, shows demo material provenance, and explicitly distinguishes illustrative local content from verified sources. Unsupported topics receive a research brief rather than fabricated findings.
