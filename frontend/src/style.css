@@ -285,3 +285,21 @@ body{overflow-x:hidden;}
 .rx-interactive-dot-field{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.82;}
 .stitch-main-shell{position:relative;z-index:1;}
 .rx-sidebar{z-index:20;}
+
+
+/* Live research results */
+.rx-research-report{margin:28px 0 22px;padding:26px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(16,16,18,.82);color:#f4f4f5}
+.rx-report-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.rx-report-heading h2{margin:0;font-size:20px;font-weight:600}
+.rx-report-heading span{font-size:12px;color:#aaa}
+.rx-research-report pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.8 'DM Sans',Arial,sans-serif;color:#d8d8dc}
+.rx-source-list{margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);display:grid;gap:10px}
+.rx-source-list h3{margin:0 0 4px;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:#aaa}
+.rx-source-list a{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 13px;border:1px solid rgba(255,255,255,.09);border-radius:10px;color:#eee;text-decoration:none;font-size:13px;transition:border-color .2s,background .2s}
+.rx-source-list a:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.04)}
+.rx-research-error{margin:24px 0;padding:18px 20px;border:1px solid rgba(235,91,91,.35);border-radius:14px;background:rgba(130,30,30,.12);color:#f3caca}
+.rx-research-error p{margin:8px 0;color:#f2dddd}
+.rx-research-error small{color:#c99}
+.stitch-agent-grid article.agent-partial{border-color:rgba(255,180,70,.28)}
+.stitch-followup button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:640px){.rx-research-report{padding:17px}.rx-report-heading h2{font-size:17px}.rx-research-report pre{font-size:13px}}
