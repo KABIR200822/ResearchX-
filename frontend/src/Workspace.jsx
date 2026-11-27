@@ -74,13 +74,38 @@ export default function Workspace() {
   const [taskMode, setTaskMode] = useState('Research');
   const [activeTool, setActiveTool] = useState('');
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [researchResult, setResearchResult] = useState(null);
+  const [researchError, setResearchError] = useState('');
   const [showTips, setShowTips] = useState(false);
   const [attached, setAttached] = useState([]);
   const [projectName, setProjectName] = useState('');
   const [projectOpen, setProjectOpen] = useState(false);
   const fileRef = useRef(null);
 
-  const submit = () => { if (query.trim()) setSent(true); };
+  const submit = async () => {
+    const question = query.trim();
+    if (!question || loading) return;
+    setSent(true);
+    setLoading(true);
+    setResearchResult(null);
+    setResearchError('');
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBase}/api/research`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: question, mode: taskMode }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Research request failed. Check that the backend is running.');
+      setResearchResult(data);
+    } catch (error) {
+      setResearchError(error.message || 'Could not connect to the ResearchX API.');
+    } finally {
+      setLoading(false);
+    }
+  };
   const chooseCapability = (item) => { setActiveTool(item.label); setQuery(old => old.trim() ? old : item.prompt); };
   const reset = () => { setQuery(''); setSent(false); setActiveTool(''); setAttached([]); setActiveNav('New chat'); };
   const recentChats = ['Hackathon Survival Plan','Research agent architecture','ResearchX landing page','AI research workflow'];
@@ -158,10 +183,35 @@ export default function Workspace() {
       <div className="stitch-capabilities">{capabilities.map(({label,icon:Icon},i)=><button key={label} className={activeTool===label?'active':''} onClick={()=>chooseCapability(capabilities[i])}><span><Icon size={17}/></span>{label}<ArrowUpRight size={13}/></button>)}</div>
       <div className="stitch-bottom-note"><span className="stitch-orbit"><i/><i/><i/></span><span>Think deeper. Discover more. Build what matters.</span></div>
     </main> : <main className="stitch-results">
-      <div className="stitch-results-top"><span><Sparkles size={15}/> RESEARCH SESSION</span><button onClick={reset}><Plus size={15}/> New session</button></div>
-      <h1>{query}</h1><div className="stitch-progress"><i/><i/><i/><i/></div>
-      <div className="stitch-agent-grid"><article><Search/><b>Researcher</b><p>Discovering relevant academic and web sources</p><small>01 · DISCOVER</small></article><article><BookOpen/><b>Analyst</b><p>Extracting findings, methods and limitations</p><small>02 · ANALYSE</small></article><article><Atom/><b>Fact-checker</b><p>Cross-checking evidence and contradictions</p><small>03 · VERIFY</small></article><article><FileText/><b>Report writer</b><p>Preparing a structured, cited report</p><small>04 · SYNTHESISE</small></article></div>
-      <p className="stitch-prototype-note">This is a frontend interaction preview. Connect your research APIs to enable live agent execution.</p><div className="stitch-followup"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Refine your research question..."/><button onClick={submit}><Send size={17}/></button></div>
+      <div className="stitch-results-top">
+        <span><Sparkles size={15}/> {loading ? 'RESEARCH IN PROGRESS' : 'RESEARCH SESSION'}</span>
+        <button onClick={reset}><Plus size={15}/> New session</button>
+      </div>
+      <h1>{query}</h1>
+      <div className="stitch-progress"><i/><i/><i/><i/></div>
+      <div className="stitch-agent-grid">
+        {(researchResult?.agents || [
+          {name:'Research planner',detail:'Breaking the question into search directions.'},
+          {name:'Web researcher',detail:'Searching credible web sources.'},
+          {name:'Evidence analyst',detail:'Comparing findings and limitations.'},
+          {name:'Report writer',detail:'Preparing a cited report.'},
+        ]).map((agent,index) => {
+          const icons = [Search, Globe2, Atom, FileText];
+          const AgentIcon = icons[index] || FileText;
+          return <article key={agent.name} className={agent.status === 'partial' ? 'agent-partial' : ''}>
+            <AgentIcon/><b>{agent.name}</b><p>{agent.detail}</p>
+            <small>{loading ? 'WORKING…' : agent.status === 'partial' ? 'PARTIAL' : researchResult ? 'COMPLETE' : 'QUEUED'}</small>
+          </article>;
+        })}
+      </div>
+      {loading && <p className="stitch-prototype-note">ResearchX is searching sources and preparing your report. This can take a little while.</p>}
+      {researchError && <div className="rx-research-error"><b>Research could not be completed</b><p>{researchError}</p><small>Check the backend terminal and your API keys, then try again.</small></div>}
+      {researchResult && <section className="rx-research-report">
+        <div className="rx-report-heading"><h2>Research report</h2><span>{researchResult.sources.length} sources</span></div>
+        <pre>{researchResult.report}</pre>
+        <div className="rx-source-list"><h3>Sources</h3>{researchResult.sources.map(source=><a key={source.url} href={source.url} target="_blank" rel="noreferrer"><span>[{source.index}] {source.title}</span><ArrowUpRight size={14}/></a>)}</div>
+      </section>}
+      <div className="stitch-followup"><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')submit()}} placeholder="Refine your research question..."/><button onClick={submit} disabled={loading || !query.trim()}><Send size={17}/></button></div>
     </main>}
 
     </div>
