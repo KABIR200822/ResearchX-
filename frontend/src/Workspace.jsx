@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowUpRight, Atom, BookOpen, Check, ChevronDown, CircleHelp, Compass, FileText, FolderOpen, Globe2, Grid2X2, Lightbulb, Mic, Palette, Paperclip, Plus, Search, Send, Sparkles, Table2, X, Zap, PanelLeftClose, MessageCirclePlus, Smile, Plug, AlarmClock, Presentation, Box, MoreHorizontal, FolderPlus, Download, UserCircle2 } from 'lucide-react';
+import { ArrowUpRight, Atom, BookOpen, Check, ChevronDown, ChevronRight, CircleHelp, Compass, FileText, FolderOpen, Globe2, Grid2X2, Lightbulb, Mic, Palette, Paperclip, Plus, Search, Send, Sparkles, Table2, X, Zap, PanelLeftClose, PanelLeft, MessageCirclePlus, Smile, Plug, AlarmClock, Presentation, Box, MoreHorizontal, FolderPlus, Download, UserCircle2, CalendarCheck, Library, Orbit } from 'lucide-react';
 
 const capabilities = [
   { label: 'Deep Research', icon: Search, prompt: 'Research this topic in depth, compare credible sources and produce a cited report.' },
@@ -11,7 +11,6 @@ const capabilities = [
 
 function Brand({ compact = false }) {
   return <a className={`rx-brand ${compact ? 'compact' : ''}`} href="#workspace" aria-label="ResearchX home">
-    <span className="rx-brand-symbol"><span/><i/><b/></span>
     <span className="rx-brand-word">research<span>X</span></span>
   </a>;
 }
@@ -19,6 +18,10 @@ function Brand({ compact = false }) {
 export default function Workspace() {
   const [query, setQuery] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarSearchOpen, setSidebarSearchOpen] = useState(false);
+  const [sidebarSearch, setSidebarSearch] = useState('');
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
+  const [activeNav, setActiveNav] = useState('New chat');
   const [mode, setMode] = useState('Balanced');
   const [modeOpen, setModeOpen] = useState(false);
   const [taskMode, setTaskMode] = useState('Research');
@@ -32,24 +35,36 @@ export default function Workspace() {
 
   const submit = () => { if (query.trim()) setSent(true); };
   const chooseCapability = (item) => { setActiveTool(item.label); setQuery(old => old.trim() ? old : item.prompt); };
-  const reset = () => { setQuery(''); setSent(false); setActiveTool(''); setAttached([]); };
+  const reset = () => { setQuery(''); setSent(false); setActiveTool(''); setAttached([]); setActiveNav('New chat'); };
+  const recentChats = ['Hackathon Survival Plan','Research agent architecture','ResearchX landing page','AI research workflow'];
+  const openRecent = (title) => { setQuery(title); setSent(true); setActiveNav(title); };
 
   return <div className={`stitch-workspace ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} id="workspace">
     <aside className="rx-sidebar">
-      <div className="rx-sidebar-head"><Brand compact/><button className="rx-sidebar-toggle" title="Collapse sidebar" onClick={()=>setSidebarCollapsed(v=>!v)}><PanelLeftClose size={19}/></button></div>
-      <button className="rx-new-chat" onClick={reset}><MessageCirclePlus size={19}/><span>New chat</span><kbd>⌘</kbd><kbd>K</kbd></button>
+      <div className="rx-sidebar-head">
+        <Brand compact/>
+        <div className="rx-sidebar-head-actions">
+          <button className="rx-sidebar-toggle" title="Search chats" onClick={()=>setSidebarSearchOpen(v=>!v)}><Search size={19}/></button>
+          <button className="rx-sidebar-toggle" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={()=>setSidebarCollapsed(v=>!v)}>{sidebarCollapsed?<PanelLeft size={19}/>:<PanelLeftClose size={19}/>}</button>
+        </div>
+      </div>
+      {sidebarSearchOpen && <div className="rx-sidebar-search"><Search size={16}/><input autoFocus value={sidebarSearch} onChange={e=>setSidebarSearch(e.target.value)} placeholder="Search chats"/><button onClick={()=>{setSidebarSearch('');setSidebarSearchOpen(false)}}><X size={14}/></button></div>}
+      <button className={`rx-new-chat ${activeNav==='New chat'?'active':''}`} onClick={reset}><FileText size={20}/><span>New chat</span></button>
       <nav className="rx-sidebar-nav">
-        <button onClick={()=>setShowTips(v=>!v)}><Smile/><span>My Research</span></button>
-        <button onClick={()=>setShowTips(v=>!v)}><Plug/><span>Plugins</span></button>
-        <button onClick={()=>setShowTips(v=>!v)}><AlarmClock/><span>Task Center</span></button>
-        <button onClick={()=>chooseCapability(capabilities[0])}><Lightbulb/><span>Inspiration</span></button>
-        <button onClick={()=>chooseCapability(capabilities[4])}><Presentation/><span>Slides</span></button>
-        <button onClick={()=>chooseCapability(capabilities[1])}><Box/><span>Build</span><i>New</i></button>
-        <button onClick={()=>setShowTips(v=>!v)}><MoreHorizontal/><span>More</span></button>
+        <button className={activeNav==='Scheduled'?'selected':''} onClick={()=>{setActiveNav('Scheduled');setShowTips(true)}}><CalendarCheck/><span>Scheduled</span></button>
+        <button className={activeNav==='Library'?'selected':''} onClick={()=>{setActiveNav('Library');setShowTips(true)}}><Library/><span>Library</span></button>
+        <button className={activeNav==='Plugins'?'selected':''} onClick={()=>{setActiveNav('Plugins');setShowTips(true)}}><Plug/><span>Plugins</span></button>
+        <button className={activeNav==='Explore'?'selected':''} onClick={()=>{setActiveNav('Explore');chooseCapability(capabilities[0])}}><Grid2X2/><span>Explore</span></button>
       </nav>
-      <div className="rx-sidebar-section"><span>Projects</span><button onClick={()=>setProjectOpen(true)}><FolderPlus/><span>New project</span></button></div>
-      <div className="rx-sidebar-section rx-sidebar-chats"><span>Chats</span><p>Start a new chat to see your research history here.</p></div>
-      <div className="rx-sidebar-footer"><button onClick={()=>setShowTips(v=>!v)}><UserCircle2/><span>Log in</span></button><button className="rx-download" title="Download"><Download/></button></div>
+      <div className="rx-sidebar-section rx-project-section">
+        <button className="rx-section-heading" onClick={()=>setProjectsExpanded(v=>!v)}><span>Projects</span>{projectsExpanded?<ChevronDown size={16}/>:<ChevronRight size={16}/>}</button>
+        {projectsExpanded && <><button className="rx-project-create" onClick={()=>setProjectOpen(true)}><FolderPlus/><span>New project</span></button>{projectName&&<button className="rx-project-item" onClick={()=>{setActiveNav(projectName);setProjectOpen(false)}}><FolderOpen/><span>{projectName}</span></button>}</>}
+      </div>
+      <div className="rx-sidebar-section rx-sidebar-chats">
+        <span>Recents</span>
+        <div className="rx-recent-list">{recentChats.filter(t=>t.toLowerCase().includes(sidebarSearch.toLowerCase())).map(title=><button key={title} className={activeNav===title?'selected':''} onClick={()=>openRecent(title)}>{title}</button>)}</div>
+      </div>
+      <div className="rx-sidebar-footer"><button className="rx-profile" onClick={()=>setShowTips(v=>!v)}><span className="rx-profile-avatar">M</span><span className="rx-profile-copy"><b>M MOURYA</b><small>Go</small></span></button><button className="rx-download" title="Download desktop app" onClick={()=>setShowTips(v=>!v)}><Download/></button></div>
     </aside>
     <div className="stitch-main-shell">
     <header className="stitch-topbar">
@@ -71,7 +86,7 @@ export default function Workspace() {
       </div>
 
       <section className="stitch-prompt-card">
-        <textarea value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }} placeholder="Describe what you want to research, compare, understand or create..." rows={4}/>
+        <textarea value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }} placeholder="Describe what you want to research, compare, understand or create..." rows={3}/>
         {attached.length > 0 && <div className="stitch-attachments">{attached.map((f,i)=><span key={`${f}-${i}`}><Paperclip size={12}/>{f}<button onClick={()=>setAttached(a=>a.filter((_,j)=>i!==j))}><X size={12}/></button></span>)}</div>}
         <div className="stitch-prompt-toolbar">
           <div className="stitch-toolbar-left">

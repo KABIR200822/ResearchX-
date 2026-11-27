@@ -206,3 +206,75 @@ body{overflow-x:hidden;}
 .stitch-main-shell{margin-left:var(--rx-sidebar-width);min-height:100vh;transition:margin-left .25s ease;}.stitch-topbar{height:68px;padding:0 34px;border-bottom:0}.stitch-home{width:min(1080px,calc(100% - 64px));min-height:calc(100vh - 68px);padding:clamp(46px,8vh,94px) 0 28px}.stitch-results{padding-top:75px}.sidebar-collapsed{--rx-sidebar-width:78px}.sidebar-collapsed .rx-sidebar{padding-left:10px;padding-right:10px}.sidebar-collapsed .rx-sidebar-head{justify-content:center;padding:0}.sidebar-collapsed .rx-brand-word,.sidebar-collapsed .rx-sidebar-toggle,.sidebar-collapsed .rx-new-chat span,.sidebar-collapsed .rx-new-chat kbd,.sidebar-collapsed .rx-sidebar-nav span,.sidebar-collapsed .rx-sidebar-nav i,.sidebar-collapsed .rx-sidebar-section>span,.sidebar-collapsed .rx-sidebar-section button span,.sidebar-collapsed .rx-sidebar-chats p,.sidebar-collapsed .rx-sidebar-footer span{display:none}.sidebar-collapsed .rx-new-chat,.sidebar-collapsed .rx-sidebar-nav button,.sidebar-collapsed .rx-sidebar-section button,.sidebar-collapsed .rx-sidebar-footer button{justify-content:center;padding:0}.sidebar-collapsed .rx-sidebar-nav button svg,.sidebar-collapsed .rx-sidebar-section button svg{width:20px;height:20px}.sidebar-collapsed .rx-sidebar-section{margin-top:24px}.sidebar-collapsed .rx-sidebar-footer{justify-content:center}.sidebar-collapsed .rx-sidebar-footer .rx-download{display:none}
 @media(max-width:760px){.stitch-workspace{--rx-sidebar-width:72px}.rx-sidebar{padding:15px 9px}.rx-sidebar-head{justify-content:center;padding:0;margin-bottom:20px}.rx-sidebar-head .rx-brand-word,.rx-sidebar-toggle,.rx-new-chat span,.rx-new-chat kbd,.rx-sidebar-nav span,.rx-sidebar-nav i,.rx-sidebar-section>span,.rx-sidebar-section button span,.rx-sidebar-chats p,.rx-sidebar-footer span{display:none}.rx-new-chat,.rx-sidebar-nav button,.rx-sidebar-section button,.rx-sidebar-footer button{justify-content:center;padding:0}.rx-sidebar-nav button svg,.rx-sidebar-section button svg{width:20px;height:20px}.rx-sidebar-section{margin-top:20px}.rx-sidebar-footer{justify-content:center}.rx-sidebar-footer .rx-download{display:none}.stitch-main-shell{margin-left:72px}.stitch-topbar{padding:0 16px}.stitch-home{width:calc(100% - 30px);padding-top:38px}.stitch-heading-row{margin-top:45px}.stitch-toplinks{gap:12px}}
 @media(max-width:430px){.stitch-home{width:calc(100% - 24px)}.stitch-announcement{font-size:10px}.stitch-heading-row h1{font-size:34px}.stitch-toplinks button:not(.stitch-round){display:none}}
+
+/* ResearchX sidebar refresh + softly animated prompt frame */
+.rx-sidebar{background:#080809;border-right:1px solid #ffffff12;padding:22px 14px 16px;}
+.rx-sidebar-head{height:56px;margin-bottom:28px;padding:0 8px;}
+.rx-sidebar-head .rx-brand{gap:0;}
+.rx-sidebar-head .rx-brand-word{font-size:29px;font-weight:780;letter-spacing:-1.8px;}
+.rx-sidebar-head .rx-brand-word span{color:#f05222;text-shadow:0 0 18px #f0522250;}
+.rx-sidebar-head-actions{display:flex;align-items:center;gap:6px;}
+.rx-sidebar-toggle{width:32px;height:32px;}
+.rx-sidebar-search{height:40px;display:flex;align-items:center;gap:8px;padding:0 10px;margin:-13px 0 13px;border:1px solid #ffffff1a;border-radius:10px;background:#151517;color:#999;}
+.rx-sidebar-search input{min-width:0;flex:1;background:transparent;border:0;outline:0;color:#eee;font:13px inherit;}
+.rx-sidebar-search button{border:0;background:transparent;color:#999;display:grid;place-items:center;cursor:pointer;}
+.rx-new-chat{height:54px;margin-bottom:14px;border:1px solid transparent;background:#1b1b1d;border-radius:15px;padding:0 15px;font-size:15px;}
+.rx-new-chat.active,.rx-new-chat:hover{background:#1c1c1f;border-color:#ffffff0a;}
+.rx-new-chat svg{color:#e1e1e5;}
+.rx-sidebar-nav{gap:2px;}
+.rx-sidebar-nav button{height:48px;padding:0 15px;font-size:15px;gap:14px;border-radius:11px;color:#c3c3c8;}
+.rx-sidebar-nav button svg{width:20px;height:20px;color:#bfc0c5;}
+.rx-sidebar-nav button.selected,.rx-sidebar-nav button:hover{background:#ffffff0b;color:#fff;}
+.rx-sidebar-section{margin-top:26px;}
+.rx-sidebar-section>span,.rx-project-section .rx-section-heading{padding:0 13px 11px;color:#929298;font-size:14px;}
+.rx-project-section .rx-section-heading{height:36px;width:100%;display:flex;align-items:center;justify-content:space-between;background:transparent;border:0;cursor:pointer;}
+.rx-project-section .rx-section-heading svg{color:#a2a2a8;}
+.rx-project-section .rx-project-create,.rx-project-section .rx-project-item{height:40px;font-size:14px;color:#bdbdc3;}
+.rx-project-section .rx-project-create svg,.rx-project-section .rx-project-item svg{width:18px;height:18px;}
+.rx-sidebar-chats{margin-top:30px;min-height:0;overflow:hidden;display:flex;flex-direction:column;}
+.rx-sidebar-chats>span{padding-bottom:12px;color:#929298;font-size:14px;}
+.rx-recent-list{overflow:auto;display:flex;flex-direction:column;gap:2px;padding-right:2px;}
+.rx-recent-list button{width:100%;min-height:40px;padding:8px 13px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;border-radius:9px;background:transparent;color:#bdbdc3;font-size:13px;cursor:pointer;}
+.rx-recent-list button:hover,.rx-recent-list button.selected{background:#ffffff0b;color:#fff;}
+.rx-sidebar-footer{padding:12px 3px 2px;border-top:1px solid #ffffff12;}
+.rx-sidebar-footer .rx-profile{height:50px;gap:10px;padding:0 4px;}
+.rx-profile-avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#4c4c50,#242428);color:#fff;font-weight:700;font-size:14px;}
+.rx-profile-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
+.rx-profile-copy b{font-size:13px;font-weight:550;color:#eee;}
+.rx-profile-copy small{font-size:11px;color:#999;}
+.rx-sidebar-footer .rx-download{width:35px;height:35px;}
+.stitch-prompt-card{position:relative;isolation:isolate;overflow:hidden;min-height:190px;height:190px;padding:18px 21px 14px;border:0;background:transparent;box-shadow:0 18px 65px #0005;}
+.stitch-prompt-card:before{content:"";position:absolute;z-index:-2;inset:-160%;background:conic-gradient(from 0deg,transparent 0 18%,#b8a7ff 24%,#8ce7f2 31%,#a6f0d2 38%,#f7c6df 45%,transparent 52% 68%,#c5b8ff 76%,transparent 84%);opacity:.72;animation:rxPromptFlow 12s linear infinite;}
+.stitch-prompt-card:after{content:"";position:absolute;z-index:-1;inset:1px;border-radius:24px;background:linear-gradient(145deg,#1d1d20,#18181b 65%,#1c1c20);}
+.stitch-prompt-card:focus-within:before{opacity:1;animation-duration:6s;}
+.stitch-prompt-card:focus-within{border-color:transparent;box-shadow:0 18px 65px #0006,0 0 24px #9bdff015;}
+.stitch-prompt-card textarea{min-height:83px;max-height:83px;resize:none;position:relative;z-index:1;}
+.stitch-prompt-toolbar,.stitch-attachments{position:relative;z-index:1;}
+@keyframes rxPromptFlow{to{transform:rotate(360deg)}}
+.stitch-under-prompt{padding-top:10px;}
+.sidebar-collapsed .rx-sidebar-head .rx-brand-word,.sidebar-collapsed .rx-sidebar-head-actions .rx-sidebar-toggle:first-child,.sidebar-collapsed .rx-profile-copy{display:none;}
+.sidebar-collapsed .rx-sidebar-head{justify-content:center;}
+.sidebar-collapsed .rx-sidebar-head-actions{position:absolute;top:78px;left:50%;transform:translateX(-50%);}
+.sidebar-collapsed .rx-sidebar-head-actions .rx-sidebar-toggle:first-child{display:none;}
+.sidebar-collapsed .rx-sidebar-head .rx-brand-word{display:inline;font-size:0;}
+.sidebar-collapsed .rx-sidebar-head .rx-brand-word span{font-size:0;}
+.sidebar-collapsed .rx-sidebar-head .rx-brand-word:before{content:'R';font-size:22px;color:#fff;}
+@media(max-width:760px){
+ .stitch-workspace{--rx-sidebar-width:76px;}
+ .rx-sidebar{padding:15px 9px;}
+ .rx-sidebar-head{justify-content:center;padding:0;margin-bottom:28px;}
+ .rx-sidebar-head .rx-brand-word{font-size:0;}
+ .rx-sidebar-head .rx-brand-word:before{content:'R';font-size:23px;color:#fff;}
+ .rx-sidebar-head .rx-brand-word span{font-size:0;}
+ .rx-sidebar-head-actions{display:none;}
+ .rx-new-chat span,.rx-sidebar-nav span,.rx-project-section .rx-section-heading span,.rx-project-section .rx-section-heading svg,.rx-project-section .rx-project-create span,.rx-project-section .rx-project-item span,.rx-sidebar-chats,.rx-profile-copy,.rx-sidebar-footer .rx-download{display:none;}
+ .rx-new-chat,.rx-sidebar-nav button,.rx-project-section .rx-project-create,.rx-project-section .rx-project-item,.rx-sidebar-footer button{justify-content:center;padding:0;}
+ .rx-new-chat{width:100%;}
+ .rx-sidebar-nav button{height:48px;}
+ .rx-project-section{margin-top:24px;}
+ .stitch-main-shell{margin-left:76px;}
+ .stitch-prompt-card{height:184px;min-height:184px;padding:15px 14px 12px;}
+ .stitch-prompt-card:after{border-radius:19px;}
+ .stitch-prompt-card textarea{min-height:76px;max-height:76px;font-size:13px;}
+}
+@media(prefers-reduced-motion:reduce){.stitch-prompt-card:before{animation:none;}}
