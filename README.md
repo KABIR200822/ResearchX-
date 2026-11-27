@@ -52,3 +52,7 @@ Research progress is displayed as a vertical, connected step timeline. The exist
 
 ### v12 — Report typography
 Refined generated-report typography with stronger editorial hierarchy, more readable body copy, improved line spacing, and responsive type sizing. Workspace UI typography and layout remain unchanged.
+
+
+### v13 — Output typography matched to reference
+Report titles now use a large, heavy, high-contrast sans-serif display style. Supporting copy uses a smaller, muted grey sans-serif style with comfortable line spacing, matching the supplied reference. Workspace controls and layout are unchanged.

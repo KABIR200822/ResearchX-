@@ -496,3 +496,53 @@ body{overflow-x:hidden;}
 .rx-report-paper-foot{font-size:10px;letter-spacing:.035em}
 .rx-report-integrity-note{font-size:11px;line-height:1.75}
 @media(max-width:600px){.rx-report-paper-title h2{font-size:27px;line-height:1.2}.rx-report-paper-callout p,.rx-report-paper-copy{font-size:14px;line-height:1.8}.rx-report-paper-findings article b{font-size:13px}}
+
+/* ResearchX v13 — bold display heading + clean muted supporting copy */
+.rx-report-paper-title h2{
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:clamp(36px,5.2vw,54px);
+  line-height:1.08;
+  letter-spacing:-.055em;
+  font-weight:800;
+  color:#f5f5f6;
+  max-width:820px;
+  margin:14px 0 13px;
+}
+.rx-report-paper-title p{
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:clamp(16px,2vw,19px);
+  line-height:1.55;
+  letter-spacing:-.015em;
+  font-weight:400;
+  color:#a4a3ab;
+  max-width:850px;
+}
+.rx-report-paper-callout p,
+.rx-report-paper-copy,
+.rx-report-paper-findings article p,
+.rx-report-paper-section ul,
+.rx-report-paper-section ol{
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:14px;
+  line-height:1.85;
+  letter-spacing:-.005em;
+  font-weight:400;
+  color:#b6b5bd;
+}
+.rx-report-paper-callout b,
+.rx-report-paper-section-head h4,
+.rx-report-paper-findings article b{
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-weight:700;
+  letter-spacing:-.025em;
+}
+.rx-report-paper-callout b{font-size:15px}
+.rx-report-paper-section-head h4{font-size:16px}
+.rx-report-paper-findings article b{font-size:14px;line-height:1.55;color:#f0eff1}
+.rx-report-paper-title>span{font-size:10px;letter-spacing:.16em}
+.rx-report-paper-foot{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+@media(max-width:600px){
+ .rx-report-paper-title h2{font-size:clamp(31px,9vw,40px);line-height:1.1}
+ .rx-report-paper-title p{font-size:16px;line-height:1.55}
+ .rx-report-paper-callout p,.rx-report-paper-copy,.rx-report-paper-findings article p,.rx-report-paper-section ul,.rx-report-paper-section ol{font-size:13px;line-height:1.8}
+}
