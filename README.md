@@ -17,11 +17,13 @@
 
 <br/>
 
-[![React](https://img.shields.io/badge/React- frontend-61DAFB?logo=react&logoColor=white)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-build-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-styling-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Lucide](https://img.shields.io/badge/Lucide-icons-F56565)](https://lucide.dev/)
-[![Status](https://img.shields.io/badge/status-active%20development-orange)](#project-status)
+<p align="center">
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" /></a>
+  <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" /></a>
+  <a href="https://lucide.dev/"><img src="https://img.shields.io/badge/Lucide-Icons-F56565?style=for-the-badge" alt="Lucide" /></a>
+  <a href="#project-status"><img src="https://img.shields.io/badge/Status-Active_Development-orange?style=for-the-badge" alt="Active development" /></a>
+</p>
 
 </div>
 
