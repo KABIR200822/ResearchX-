@@ -278,3 +278,10 @@ body{overflow-x:hidden;}
  .stitch-prompt-card textarea{min-height:76px;max-height:76px;font-size:13px;}
 }
 @media(prefers-reduced-motion:reduce){.stitch-prompt-card:before{animation:none;}}
+
+
+/* Full-window interactive dotted field: decorative layer only; all workspace controls remain untouched. */
+.stitch-workspace{position:relative;isolation:isolate;}
+.rx-interactive-dot-field{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.82;}
+.stitch-main-shell{position:relative;z-index:1;}
+.rx-sidebar{z-index:20;}
