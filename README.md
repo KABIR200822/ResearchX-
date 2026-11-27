@@ -170,8 +170,8 @@ A focused workspace with a prompt composer, research modes, capability starters 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/KABIR200822/ResearchX-.git
-cd ResearchX-
+git clone https://github.com/KrishnaVidhyarthii/ResearchX.git
+cd ResearchX
 ```
 
 ### 2. Move into the frontend directory
