@@ -21,7 +21,7 @@ npm run preview
 - Existing ResearchX landing page and workspace visual design
 - Interactive full-window dotted background and prompt-card neon treatment
 - Collapsible sidebar with a persistent reopen control
-- New chat, recent conversation list, search, and simulated research progress
+- New chat, recent conversation list, search, and live research progress
 - Research and Web mode selection, model preference selection, and capability prompt starters
 - PDF selection and in-session browser PDF preview
 - Research workspace tabs: Overview, Sources, Papers, Findings, Verification, Report
@@ -98,7 +98,7 @@ Follow the prompts, then run `npx vercel --prod` for production deployment.
 
 ### Current scope
 
-This is a static React/Vite frontend using local mock research data. Vercel deployment does not add live AI research, web search, backend APIs, or persistent user accounts. Browser-local data remains local to each visitor's browser.
+The Vercel configuration deploys the static React/Vite frontend. Live AI research requires the separately deployed FastAPI service described above. Browser-local conversation and evidence data remain local to each visitor's browser.
 
 ## Live research API integration
 
