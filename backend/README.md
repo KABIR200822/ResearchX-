@@ -1,6 +1,6 @@
 # ResearchX backend
 
-FastAPI service for web research, source collection and AI synthesis.
+FastAPI service for web research, source collection and Gemini AI synthesis.
 
 ## Setup
 
@@ -12,7 +12,36 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Add your own `TAVILY_API_KEY` and `GEMINI_API_KEY` to `.env`. Keep `.env` private; it is ignored by Git. Tavily is required for web search. Gemini is optional: without it, the API returns the collected source summaries without AI synthesis.
+Add your API keys to `.env`. Keep this file private; it is ignored by Git.
+
+### Search provider
+
+Set `SEARCH_PROVIDER` to either `exa` or `tavily`.
+
+For Exa:
+
+```env
+SEARCH_PROVIDER=exa
+EXA_API_KEY=your_exa_api_key
+```
+
+For Tavily:
+
+```env
+SEARCH_PROVIDER=tavily
+TAVILY_API_KEY=your_tavily_api_key
+```
+
+Only the key for the selected search provider is required. ResearchX uses Exa's Search API with highlights or Tavily's Search API, then passes the normalized source material to Gemini for synthesis.
+
+### Gemini
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-3.8-flash
+```
+
+Gemini is optional. Without it, the API returns the collected source summaries without AI synthesis.
 
 ## Run
 
