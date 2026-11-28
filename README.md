@@ -117,10 +117,9 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
 ```
 
-Add your own `TAVILY_API_KEY` and `GEMINI_API_KEY` to `backend/.env`. Keep this file private and out of Git.
+If `backend/.env` does not already exist, create it by copying `backend/.env.example`. If it already exists, keep it: do not overwrite your existing API keys. Add or verify `TAVILY_API_KEY` and `GEMINI_API_KEY` there. Keep this file private and out of Git.
 
 Start the API from the repository root:
 
@@ -137,7 +136,7 @@ API health and interactive docs:
 
 ### Configure the frontend
 
-Create a root `.env` file containing:
+If a root `.env` file does not already exist, create it from `.env.example`. Do not overwrite an existing file. It should contain:
 
 ```env
 VITE_API_URL=http://localhost:8000
