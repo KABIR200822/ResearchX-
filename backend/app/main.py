@@ -14,13 +14,15 @@ from pydantic import BaseModel, Field
 load_dotenv()
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
+EXA_API_KEY = os.getenv("EXA_API_KEY", "").strip()
+SEARCH_PROVIDER = os.getenv("SEARCH_PROVIDER", "tavily").strip().lower()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
 
 app = FastAPI(
     title="ResearchX API",
     description="Multi-stage web research API for the ResearchX workspace.",
-    version="1.0.0",
+    version="1.1.0",
 )
 
 origins = [
@@ -132,6 +134,41 @@ async def tavily_search(
     return data.get("results", [])
 
 
+async def exa_search(
+    client: httpx.AsyncClient,
+    query: str,
+) -> list[dict[str, Any]]:
+    if not EXA_API_KEY:
+        raise RuntimeError("EXA_API_KEY is not configured.")
+
+    response = await client.post(
+        "https://api.exa.ai/search",
+        headers={"x-api-key": EXA_API_KEY},
+        json={
+            "query": query,
+            "type": "auto",
+            "numResults": 5,
+            "contents": {"highlights": True},
+        },
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    normalized: list[dict[str, Any]] = []
+    for item in data.get("results", []):
+        highlights = item.get("highlights") or []
+        content = " ".join(str(part) for part in highlights if part)
+        normalized.append(
+            {
+                "title": item.get("title") or "Untitled source",
+                "url": item.get("url") or "",
+                "content": content or item.get("text") or item.get("summary") or "",
+                "published_date": item.get("publishedDate") or "",
+            }
+        )
+    return normalized
+
+
 def make_source_list(results: list[dict[str, Any]]) -> list[dict[str, str]]:
     sources: list[dict[str, str]] = []
     seen: set[str] = set()
@@ -145,7 +182,9 @@ def make_source_list(results: list[dict[str, Any]]) -> list[dict[str, str]]:
                 "title": str(item.get("title") or "Untitled source"),
                 "url": url,
                 "content": str(item.get("content") or "")[:1800],
-                "published_date": str(item.get("published_date") or ""),
+                "published_date": str(
+                    item.get("published_date") or item.get("publishedDate") or ""
+                ),
             }
         )
     return sources[:12]
@@ -161,7 +200,7 @@ def fallback_report(question: str, sources: list[dict[str, str]]) -> str:
         "## Research results",
         "",
         f"Search results for **{question}** are listed below. "
-        "Add a Gemini API key to enable AI analysis and synthesis.",
+        "AI synthesis was unavailable for this request.",
         "",
     ]
     for index, source in enumerate(sources, start=1):
@@ -181,8 +220,10 @@ async def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "service": "ResearchX API",
+        "search_provider": SEARCH_PROVIDER,
         "providers": {
             "tavily_configured": bool(TAVILY_API_KEY),
+            "exa_configured": bool(EXA_API_KEY),
             "gemini_configured": bool(GEMINI_API_KEY),
         },
     }
@@ -193,10 +234,25 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
     question = request.query.strip()
     if len(question) < 3:
         raise HTTPException(status_code=422, detail="Enter a longer research question.")
-    if not TAVILY_API_KEY:
+
+    if SEARCH_PROVIDER == "exa":
+        search_function = exa_search
+        if not EXA_API_KEY:
+            raise HTTPException(
+                status_code=503,
+                detail="Exa is selected but EXA_API_KEY is missing from backend/.env.",
+            )
+    elif SEARCH_PROVIDER == "tavily":
+        search_function = tavily_search
+        if not TAVILY_API_KEY:
+            raise HTTPException(
+                status_code=503,
+                detail="Tavily is selected but TAVILY_API_KEY is missing from backend/.env.",
+            )
+    else:
         raise HTTPException(
-            status_code=503,
-            detail="Tavily is not configured. Add TAVILY_API_KEY to backend/.env.",
+            status_code=500,
+            detail="SEARCH_PROVIDER must be either 'exa' or 'tavily'.",
         )
 
     timeout = httpx.Timeout(45.0, connect=15.0)
@@ -204,14 +260,16 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
         try:
             queries = await plan_searches(client, question)
             search_batches = await asyncio.gather(
-                *(tavily_search(client, query) for query in queries)
+                *(search_function(client, query) for query in queries)
             )
         except httpx.HTTPStatusError as exc:
-            detail = "A research provider rejected the request."
-            if exc.response.status_code == 401:
-                detail = "An API key was rejected. Check your Tavily and Gemini keys."
-            elif exc.response.status_code == 429:
-                detail = "The research provider rate limit was reached. Try again shortly."
+            status = exc.response.status_code
+            if status in (401, 403):
+                detail = f"{SEARCH_PROVIDER.title()} rejected the API key or its permissions. Check the selected provider key."
+            elif status == 429:
+                detail = f"{SEARCH_PROVIDER.title()} rate limit or usage quota reached. Try again later."
+            else:
+                detail = f"{SEARCH_PROVIDER.title()} search failed with HTTP {status}."
             raise HTTPException(status_code=502, detail=detail) from exc
         except (httpx.HTTPError, RuntimeError) as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -247,7 +305,6 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
                 report = await gemini_generate(client, synthesis_prompt)
                 synthesis_used = True
             except (httpx.HTTPError, RuntimeError):
-                # Search results remain available even if the synthesis provider fails.
                 pass
 
     return {
@@ -265,7 +322,7 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
         ],
         "agents": [
             {"name": "Research planner", "status": "complete", "detail": f"Prepared {len(queries)} search directions."},
-            {"name": "Web researcher", "status": "complete", "detail": f"Collected {len(sources)} unique sources."},
+            {"name": "Web researcher", "status": "complete", "detail": f"Collected {len(sources)} unique sources using {SEARCH_PROVIDER.title()}."},
             {"name": "Evidence analyst", "status": "complete" if synthesis_used else "partial", "detail": "Compared source evidence and uncertainty." if synthesis_used else "AI analysis is unavailable; showing source summaries."},
             {"name": "Report writer", "status": "complete" if synthesis_used else "partial", "detail": "Generated a cited research report." if synthesis_used else "Showing search results without AI synthesis."},
         ],
