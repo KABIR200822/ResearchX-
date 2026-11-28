@@ -1,12 +1,12 @@
 # Frontend Status and Acceptance Checklist
 
-Status reflects the current consolidated v8 baseline. Checkboxes are intentionally not marked complete where behaviour has not been fully tested.
+Status reflects the current consolidated React/Vite frontend and the live API integration branch. Checkboxes remain open where behaviour has not been fully tested.
 
 ## Present in the current baseline
 
 - [x] Landing page and workspace source consolidated from the latest cumulative version
 - [x] Sidebar collapse and reopen controls
-- [x] New chat and simulated research session flow
+- [x] New chat and live research session flow
 - [x] Recent conversations and history search UI
 - [x] Research/Web mode and model preference controls
 - [x] PDF file selection and in-session browser preview
