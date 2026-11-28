@@ -31,13 +31,16 @@ Status reflects the current consolidated v8 baseline. Checkboxes are intentional
 - [ ] Add export validation and report formatting tests
 - [ ] Test desktop, tablet, and mobile layouts
 
-## Not implemented until the final API phase
+## Live API integration added on the API branch
 
-- [ ] Live multi-source web search and retrieval
+- [x] FastAPI service with health and research endpoints
+- [x] Tavily multi-query web retrieval
+- [x] Gemini search planning and source-grounded report synthesis
+- [x] Live source references rendered in the Sources tab and report
+- [x] ReportLab PDF export endpoint and workspace download action
 - [ ] Automatic paper/PDF text extraction and OCR
-- [ ] AI findings and insight extraction
-- [ ] Automated cross-verification and contradiction detection
-- [ ] Verified inline citations and source references
+- [ ] Independent source authentication and factual verification
+- [ ] Citation support validation against source passages
 
 ## Known limitation
 
@@ -48,3 +51,6 @@ The current PDF viewer uses `URL.createObjectURL()` for a selected file. Such UR
 - Each stage occupies its own full-width row with a connected timeline rail.
 - Completed, active and queued stages have distinct timeline markers.
 - Responsive spacing is included; existing research stage logic and content are unchanged.
+
+
+The live backend is in `backend/`. It is intentionally separate from the root React/Vite application. The `feature/live-research-integration` branch adds the adapter without replacing the existing workspace or its offline demo module.
