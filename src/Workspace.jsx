@@ -208,6 +208,7 @@ export default function Workspace({ userName = "" }) {
   const [activePipeline, setActivePipeline] = useState(null);
   const [isResearching, setIsResearching] = useState(false);
   const [researchError, setResearchError] = useState('');
+  const [lastResearchQuery, setLastResearchQuery] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState('');
   const [showTips, setShowTips] = useState(false);
@@ -235,17 +236,19 @@ export default function Workspace({ userName = "" }) {
   useEffect(() => { try { localStorage.setItem('researchx-schedules', JSON.stringify(schedules)); } catch {} }, [schedules]);
   useEffect(() => { try { localStorage.setItem('researchx-plugin-states', JSON.stringify(pluginStates)); } catch {} }, [pluginStates]);
 
-  const submit = async () => {
-    const prompt = query.trim();
+  const submit = async (queryOverride = '') => {
+    const prompt = String(queryOverride || query).trim();
     if (!prompt || isResearching) return;
     const id = activeConversationId || `${Date.now()}`;
     const existing = conversations.find(item => item.id === id);
-    const nextMessages = [...messages, { role: 'user', content: prompt, createdAt: Date.now() }];
+    const alreadyPending = messages.at(-1)?.role === 'user' && messages.at(-1)?.content === prompt;
+    const nextMessages = alreadyPending ? messages : [...messages, { role: 'user', content: prompt, createdAt: Date.now() }];
     const conversation = { id, title: existing?.title || prompt.slice(0, 54), prompt, messages: nextMessages, updatedAt: Date.now() };
     setConversations(items => [conversation, ...items.filter(item => item.id !== id)].slice(0, 30));
     setActiveConversationId(id);
     setMessages(nextMessages);
     setQuery('');
+    setLastResearchQuery(prompt);
     setSent(true);
     setResearchStage(0);
     setActivePipeline(null);
@@ -420,7 +423,7 @@ export default function Workspace({ userName = "" }) {
             <button className="stitch-tool-icon" title="Style settings" onClick={()=>setShowTips(v=>!v)}><Palette size={17}/></button>
             <div className="stitch-mode-wrap"><button className="stitch-model-select" onClick={()=>setModeOpen(v=>!v)}><Sparkles size={16}/>{mode}<ChevronDown size={14}/></button>{modeOpen&&<div className="stitch-model-menu">{['Balanced','Deep thinking','Fast'].map(m=><button key={m} onClick={()=>{setMode(m);setModeOpen(false)}}>{m}{mode===m&&<Check size={14}/>}</button>)}</div>}</div>
             <button className="stitch-tool-icon" title="Voice input"><Mic size={18}/></button>
-            <button className="stitch-submit" disabled={!query.trim() || isResearching} onClick={submit} title="Start research"><ArrowUpRight size={21}/></button>
+            <button className="stitch-submit" disabled={!query.trim() || isResearching} onClick={() => submit()} title="Start research"><ArrowUpRight size={21}/></button>
           </div>
         </div>
       </section>
@@ -448,10 +451,10 @@ export default function Workspace({ userName = "" }) {
       <div className="stitch-results-top"><span><Sparkles size={15}/> RESEARCH SESSION</span><button onClick={reset}><Plus size={15}/> New session</button></div>
       <div className="rx-session-thread">{messages.map((message, index) => <article className={`rx-chat-message ${message.role}`} key={`${message.createdAt || index}-${index}`}><span className="rx-message-avatar">{message.role === 'user' ? 'R' : <Sparkles size={15}/>}</span><div><small>{message.role === 'user' ? 'YOU' : 'RESEARCHX'}</small><p>{message.content}</p>{message.role === 'assistant' && <ResearchReportPreview reportRef={reportRef} topic={message.topic || message.content} pipeline={message.pipeline} onDownloadPdf={()=>handleDownloadPdf(message.pipeline)} pdfLoading={pdfLoading} pdfError={pdfError}/>}</div></article>)}</div>
       {isResearching && <><div className="stitch-progress"><i/><i/><i/><i/></div><div className="stitch-agent-grid" ref={agentGridRef}>{[{icon:Search,name:'Researcher',desc:'Mapping the question and identifying useful source types',stage:'01 · DISCOVER'},{icon:BookOpen,name:'Analyst',desc:'Planning how findings and limitations will be compared',stage:'02 · ANALYSE'},{icon:Atom,name:'Fact-checker',desc:'Preparing evidence checks and contradiction review',stage:'03 · VERIFY'},{icon:FileText,name:'Report writer',desc:'Organising the final report structure',stage:'04 · SYNTHESISE'}].map((agent,index)=>{const Icon=agent.icon;const done=researchStage>index;const active=researchStage===index;return <article className={`${done?'is-done':''} ${active?'is-active':''}`} key={agent.name}><div className="rx-agent-status">{done?<Check size={15}/>:active?<span className="rx-agent-spinner"/>:<Icon size={17}/>}</div><b>{agent.name}</b><p>{done && activePipeline?.stages?.[index]?.summary ? activePipeline.stages[index].summary : agent.desc}</p><small>{agent.stage} · {done?'COMPLETE':active?'WORKING':'QUEUED'}</small>{done && activePipeline?.stages?.[index]?.output && <details className="rx-agent-output"><summary>View structured output</summary><pre>{JSON.stringify(activePipeline.stages[index].output, null, 2)}</pre></details>}</article>})}</div><p className="stitch-prototype-note">Live workflow · Tavily source retrieval and Gemini synthesis are running. Independent verification still requires human review.</p></>}
-      {researchError && <div className="rx-research-error"><b>Research request failed</b><p>{researchError}</p><small>Check that the backend is running and both provider keys are configured.</small><button type="button" onClick={submit}>Retry research</button></div>}
+      {researchError && <div className="rx-research-error"><b>Research request failed</b><p>{researchError}</p><small>Check that the backend is running and both provider keys are configured.</small><button type="button" onClick={() => submit(lastResearchQuery)}>Retry research</button></div>}
       {!isResearching && messages.some(message=>message.role==='assistant') && <div className="rx-report-actions"><span><Check size={14}/> Preview response ready</span><button onClick={()=>{const last=messages.filter(m=>m.role==='assistant').at(-1);if(last)navigator.clipboard?.writeText(last.content)}}>Copy response</button></div>}
       {!isResearching && messages.some(message=>message.role==='assistant') && <ResearchWorkspaceTabs attached={attached} pipeline={messages.filter(m=>m.role==='assistant').at(-1)?.pipeline || activePipeline} onAddPaper={()=>fileRef.current?.click()}/>}
-      <div className="stitch-followup"><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}}} placeholder="Ask a follow-up or refine your research..."/><button disabled={!query.trim()||isResearching} onClick={submit}><Send size={17}/></button></div>
+      <div className="stitch-followup"><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}}} placeholder="Ask a follow-up or refine your research..."/><button disabled={!query.trim()||isResearching} onClick={() => submit()}><Send size={17}/></button></div>
     </main>}
 
     </div>
