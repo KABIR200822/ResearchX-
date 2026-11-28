@@ -291,6 +291,10 @@ body{overflow-x:hidden;}
 .rx-research-report{margin:28px 0 22px;padding:26px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(16,16,18,.82);color:#f4f4f5}
 .rx-report-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
 .rx-report-heading h2{margin:0;font-size:20px;font-weight:600}
+.rx-report-actions{display:flex;align-items:center;gap:12px}
+.rx-report-actions button{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid rgba(255,255,255,.18);border-radius:9px;background:rgba(255,255,255,.06);color:#f4f4f5;font:600 12px 'DM Sans',Arial,sans-serif;cursor:pointer;transition:background .2s,border-color .2s}
+.rx-report-actions button:hover:not(:disabled){background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.34)}
+.rx-report-actions button:disabled{opacity:.55;cursor:wait}
 .rx-report-heading span{font-size:12px;color:#aaa}
 .rx-research-report pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.8 'DM Sans',Arial,sans-serif;color:#d8d8dc}
 .rx-source-list{margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);display:grid;gap:10px}
