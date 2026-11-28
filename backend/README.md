@@ -25,10 +25,9 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
 ```
 
-Set your own `TAVILY_API_KEY`, `GEMINI_API_KEY`, and optionally `GEMINI_MODEL` in `backend/.env`. Do not commit that file or place keys in frontend code.
+If `backend/.env` does not exist, copy `.env.example` to `.env`. If it already exists, do not overwrite it. Set or verify `TAVILY_API_KEY`, `GEMINI_API_KEY`, and optionally `GEMINI_MODEL` in `backend/.env`. Do not commit that file or place keys in frontend code.
 
 Start the service from the `backend` directory:
 
