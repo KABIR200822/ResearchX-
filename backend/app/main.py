@@ -266,7 +266,10 @@ def _normalise_report(data: dict[str, Any], sources: list[dict[str, Any]], quest
         clean_sections.append(item)
 
     findings = []
-    raw_findings = data.get("findings", [])\n    if not isinstance(raw_findings, list):\n        raw_findings = []\n    for index, finding in enumerate(raw_findings[:30]):
+    raw_findings = data.get("findings", [])
+    if not isinstance(raw_findings, list):
+        raw_findings = []
+    for index, finding in enumerate(raw_findings[:30]):
         if not isinstance(finding, dict):
             continue
         claim = str(finding.get("claim") or "").strip()
@@ -291,6 +294,9 @@ def _normalise_report(data: dict[str, Any], sources: list[dict[str, Any]], quest
         }
         for source in sources
     ]
+    raw_limitations = data.get("limitations", [])
+    if not isinstance(raw_limitations, list):
+        raw_limitations = []
     return {
         "title": str(data.get("title") or question)[:500],
         "status": "LIVE RESEARCH · AI SYNTHESIS · NOT INDEPENDENTLY VERIFIED",
@@ -306,7 +312,7 @@ def _normalise_report(data: dict[str, Any], sources: list[dict[str, Any]], quest
         )[:3000],
         "limitations": [
             str(item)[:1000]
-            for item in data.get("limitations", [])[:12]
+            for item in raw_limitations[:12]
             if str(item).strip()
         ] or [
             "AI synthesis can contain errors; inspect the linked sources.",
