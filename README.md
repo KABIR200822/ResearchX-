@@ -34,7 +34,7 @@ The React/Vite frontend now connects to an optional FastAPI service for live Tav
 
 Conversation metadata and evidence entries use `localStorage`. PDF previews currently use temporary object URLs and selected files are not durably stored across refreshes. That is a known task for the next frontend functionality pass (IndexedDB-backed document storage).
 
-Research progress and agent stages are simulated. They must remain clearly labelled as previews until the real backend is integrated.
+Live research progress is driven by backend results. The offline demo pipeline remains available as a local reference, but it is no longer used for live workspace submissions.
 
 ## Project principles
 
