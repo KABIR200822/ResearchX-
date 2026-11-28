@@ -1,22 +1,10 @@
-# ResearchX
-
-ResearchX is a React + Vite frontend for an autonomous research workspace.
-
-## Run locally
+# ResearchX Frontend (React + Vite + TypeScript)
 
 ```bash
+cd frontend
 npm install
+cp .env.example .env     # optional, default backend is http://127.0.0.1:8000
 npm run dev
 ```
 
-## Build
-
-```bash
-npm run build
-```
-
-## GitHub Pages
-
-The Vite base path is configured as `/ResearchX/`. The workflow at `.github/workflows/deploy.yml` builds the app and deploys `dist/` to GitHub Pages whenever a commit is pushed to `main`.
-
-In the repository, open **Settings → Pages → Build and deployment** and select **GitHub Actions** as the source. Then check the **Actions** tab for the deployment run.
+Open http://localhost:5173 — the backend must be running first.
