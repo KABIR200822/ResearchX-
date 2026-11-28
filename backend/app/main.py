@@ -265,7 +265,7 @@ def _normalise_report(data: dict[str, Any], sources: list[dict[str, Any]], quest
         clean_sections.append(item)
 
     findings = []
-    for index, finding in enumerate(data.get("findings", [])[:30]):
+    raw_findings = data.get("findings", [])\n    if not isinstance(raw_findings, list):\n        raw_findings = []\n    for index, finding in enumerate(raw_findings[:30]):
         if not isinstance(finding, dict):
             continue
         claim = str(finding.get("claim") or "").strip()
