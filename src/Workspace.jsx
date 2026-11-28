@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { runMockResearchPipeline } from './agents/mockResearchPipeline.js';
+import { runResearch, downloadResearchPdf } from './services/researchApi.js';
 import { ArrowUpRight, Atom, BookOpen, Check, ChevronDown, ChevronRight, CircleHelp, Compass, FileText, FolderOpen, Globe2, Grid2X2, Lightbulb, Mic, Palette, Paperclip, Plus, Search, Send, Sparkles, Table2, X, Zap, PanelLeftClose, PanelLeft, MessageCirclePlus, Smile, Plug, AlarmClock, Presentation, Box, MoreHorizontal, FolderPlus, Download, UserCircle2, CalendarCheck, Library, Orbit, Eye, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
 
@@ -63,7 +63,7 @@ function Brand({ compact = false }) {
   </a>;
 }
 
-function ResearchReportPreview({ topic, reportRef, pipeline }) {
+function ResearchReportPreview({ topic, reportRef, pipeline, onDownloadPdf, pdfLoading, pdfError }) {
   const report = pipeline?.report;
   const sections = report?.sections || [
     { heading: 'Research brief', body: `Investigate: ${topic || 'Your research topic'}` },
@@ -75,7 +75,7 @@ function ResearchReportPreview({ topic, reportRef, pipeline }) {
         <h2>{report?.title || topic || 'Your research topic'}</h2>
         <p>{report?.status || 'No research output is available yet.'}</p>
       </div>
-      <span className="rx-report-status">DEMO</span>
+      <div className="rx-report-preview-actions"><span className="rx-report-status">{pipeline?.mode === 'live' ? 'LIVE' : 'DEMO'}</span>{pipeline?.mode === 'live' && <button type="button" onClick={onDownloadPdf} disabled={pdfLoading}><Download size={14}/>{pdfLoading ? 'Preparing PDF…' : 'Download PDF'}</button>}</div>
     </div>
     <div className="rx-report-summary"><span>EXECUTIVE SUMMARY</span><p>{report?.executiveSummary || 'A research synthesis will appear here.'}</p></div>
     {sections.map((section, index) => <div className="rx-report-dynamic-section" key={`${section.heading}-${index}`}>
@@ -94,9 +94,10 @@ function ResearchReportPreview({ topic, reportRef, pipeline }) {
       <p><strong>Content provenance:</strong> {report?.provenance || 'Local mock pipeline'}</p>
       <div className="rx-report-notice"><b>Important limitation</b><p>{report?.limitations?.join(' ') || 'This output is generated in offline demo mode and is not independently verified.'}</p></div>
     </div>
-    <div className="rx-report-section-title"><h3>External references & citations</h3><span>{report?.references?.length || 0} verified references</span></div>
-    <div className="rx-source-empty"><div className="rx-source-icon"><BookOpen size={19}/></div><div><b>No external citations in mock mode</b><p>Demo knowledge materials are not real publications. External references will be populated after source retrieval and citation verification are connected.</p></div></div>
-    <div className="rx-report-footer"><span><Check size={14}/> {report?.evidenceCount || 0} illustrative findings</span><span>Independent verification pending</span></div>
+    <div className="rx-report-section-title"><h3>External references & citations</h3><span>{report?.references?.length || 0} sources</span></div>
+    {report?.references?.length ? <div className="rx-report-source-list">{report.references.map((source,index)=><article key={source.id || source.url}><div><b>[{source.id || index + 1}] {source.title}</b><small>{source.publisher || 'External source'}{source.publishedAt ? ` · ${source.publishedAt}` : ''}</small><a href={source.url} target="_blank" rel="noreferrer">{source.url}</a></div></article>)}</div> : <div className="rx-source-empty"><div className="rx-source-icon"><BookOpen size={19}/></div><div><b>No external sources returned</b><p>Source links will appear here when live web retrieval is available.</p></div></div>}
+    {pdfError && <div className="rx-research-error"><p>{pdfError}</p></div>}
+    <div className="rx-report-footer"><span><Check size={14}/> {report?.evidenceCount || 0} findings</span><span>{pipeline?.mode === 'live' ? 'AI synthesis · source review required' : 'Local demo · not verified'}</span></div>
   </section>;
 }
 
@@ -119,9 +120,10 @@ function ResearchWorkspaceTabs({ attached = [], pipeline = null, onAddPaper = ()
     setEvidenceItems(items => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, claim, source: sourceDraft.trim(), stance: stanceDraft, note: noteDraft.trim(), createdAt: Date.now() }, ...items]);
     setClaimDraft(''); setSourceDraft(''); setNoteDraft(''); setStanceDraft('supports');
   };
-  const demoFindings = (pipeline?.report?.findings || []).map((item, index) => ({ id: `demo-${pipeline.id}-${item.id || index}`, claim: item.claim, source: 'Bundled demo knowledge pack · not an external source', stance: 'context', note: item.detail || 'Illustrative topic-pack finding. It has not been independently verified.', demo: true, category: item.category || 'Demo finding' }));
-  const allEvidence = [...demoFindings, ...evidenceItems];
+  const pipelineFindings = (pipeline?.report?.findings || []).map((item, index) => ({ id: `pipeline-${pipeline.id}-${item.id || index}`, claim: item.claim, source: item.source || 'AI synthesis · review linked sources', stance: 'context', note: item.detail || 'Generated finding. Review its linked source material.', demo: pipeline?.mode !== 'live', category: item.category || 'Research finding' }));
+  const allEvidence = [...pipelineFindings, ...evidenceItems];
   const demoSources = pipeline?.report?.demoMaterials || [];
+  const externalSources = pipeline?.sources || pipeline?.report?.references || [];
   const evidenceCounts = allEvidence.reduce((counts, item) => { counts[item.stance] = (counts[item.stance] || 0) + 1; return counts; }, {});
   const visibleEvidence = allEvidence.filter(item => evidenceFilter === 'all' || item.stance === evidenceFilter);
   const [selectedPaper, setSelectedPaper] = useState(null);
@@ -134,13 +136,13 @@ function ResearchWorkspaceTabs({ attached = [], pipeline = null, onAddPaper = ()
   ];
   const openPaper = paper => { setSelectedPaper(paper); setPage(1); };
   return <section className="rx-research-workspace">
-    <div className="rx-research-workspace-head"><div><span className="rx-report-kicker"><Orbit size={13}/> RESEARCH WORKSPACE</span><h3>Research materials</h3><p>One place for research sources, uploaded papers and your final report.</p></div><span className="rx-preview-pill">FRONTEND PREVIEW</span></div>
+    <div className="rx-research-workspace-head"><div><span className="rx-report-kicker"><Orbit size={13}/> RESEARCH WORKSPACE</span><h3>Research materials</h3><p>One place for research sources, uploaded papers and your final report.</p></div><span className="rx-preview-pill">{pipeline?.mode === 'live' ? 'LIVE RESEARCH' : 'LOCAL DEMO'}</span></div>
     <div className="rx-research-tabs" role="tablist" aria-label="Research workspace sections">
       {tabs.map(({name, icon: Icon}) => <button key={name} role="tab" aria-selected={activeTab===name} className={activeTab===name?'active':''} onClick={()=>setActiveTab(name)}><Icon size={15}/>{name}{name==='Papers'&&attached.length>0&&<span className="rx-tab-count">{attached.length}</span>}</button>)}
     </div>
     <div className="rx-research-tab-panel" role="tabpanel">
-      {activeTab==='Overview'&&<><div className="rx-workspace-stats"><article><span>RESEARCH INSIGHTS</span><b>{demoFindings.length}</b><small>Illustrative topic insights</small></article><article><span>KNOWLEDGE CARDS</span><b>{demoSources.length}</b><small>Bundled illustrative material</small></article><article><span>MANUAL EVIDENCE</span><b>{evidenceItems.length}</b><small>Added by you</small></article><article><span>UPLOADED PAPERS</span><b>{attached.length}</b><small>PDFs in this session</small></article></div><div className="rx-overview-grid"><article><span>01</span><b>Gather evidence</b><p>{demoSources.length ? `${demoSources.length} local demo knowledge cards are loaded for this topic. No external sources were retrieved.` : 'Collect independent web sources and research papers for the question.'}</p></article><article><span>02</span><b>Review research insights</b><p>{demoFindings.length ? `${demoFindings.length} illustrative insights are included in the generated report.` : 'No matching local demo pack was found for this topic.'}</p></article><article><span>03</span><b>Build your report</b><p>Bring together the available source material and uploaded papers into a structured research report.</p></article></div></>}
-      {activeTab==='Sources'&&(demoSources.length ? <div className="rx-workspace-source-grid">{demoSources.map((item,index)=><article key={item.id || index}><span>DEMO MATERIAL · {String(index+1).padStart(2,'0')}</span><b>{item.title}</b><p>{item.note || 'Bundled illustrative material for this topic.'}</p><small>{item.kind || 'Synthetic demo material'} · Not an external publication</small></article>)}</div> : <div className="rx-tab-empty"><Globe2/><div><b>No source cards for this topic</b><p>This offline run did not retrieve web sources. Add a matching topic pack or connect live search to populate this section.</p></div><span>0 SOURCES</span></div>)}
+      {activeTab==='Overview'&&<><div className="rx-workspace-stats"><article><span>RESEARCH FINDINGS</span><b>{pipelineFindings.length}</b><small>{pipeline?.mode === 'live' ? 'AI-generated findings' : 'Illustrative topic insights'}</small></article><article><span>SOURCES</span><b>{externalSources.length || demoSources.length}</b><small>{pipeline?.mode === 'live' ? 'Retrieved web sources' : 'Bundled demo materials'}</small></article><article><span>MANUAL EVIDENCE</span><b>{evidenceItems.length}</b><small>Added by you</small></article><article><span>UPLOADED PAPERS</span><b>{attached.length}</b><small>PDFs in this session</small></article></div><div className="rx-overview-grid"><article><span>01</span><b>Gather evidence</b><p>{externalSources.length ? `${externalSources.length} sources were retrieved for this research session.` : demoSources.length ? `${demoSources.length} local demo knowledge cards are loaded. No external sources were retrieved.` : 'No sources were retrieved for this session.'}</p></article><article><span>02</span><b>Review research insights</b><p>{pipelineFindings.length ? `${pipelineFindings.length} findings are included in the generated report.` : 'No findings were generated for this topic.'}</p></article><article><span>03</span><b>Build your report</b><p>Bring together the available source material and uploaded papers into a structured research report.</p></article></div></>}
+      {activeTab==='Sources'&&(externalSources.length ? <div className="rx-workspace-source-grid">{externalSources.map((item,index)=><article key={item.id || item.url || index}><span>{pipeline?.mode === 'live' ? `WEB SOURCE · ${String(index+1).padStart(2,'0')}` : 'SOURCE'}</span><b>{item.title}</b><p>{item.excerpt || item.note || 'Retrieved source reference.'}</p><small>{item.publisher || item.kind || 'External source'}{item.publishedAt ? ` · ${item.publishedAt}` : ''}</small><a href={item.url} target="_blank" rel="noreferrer">Open source <ArrowUpRight size={13}/></a></article>)}</div> : demoSources.length ? <div className="rx-workspace-source-grid">{demoSources.map((item,index)=><article key={item.id || index}><span>DEMO MATERIAL · {String(index+1).padStart(2,'0')}</span><b>{item.title}</b><p>{item.note || 'Bundled illustrative material for this topic.'}</p><small>{item.kind || 'Synthetic demo material'} · Not an external publication</small></article>)}</div> : <div className="rx-tab-empty"><Globe2/><div><b>No sources returned</b><p>The research API did not return any usable web sources for this session.</p></div><span>0 SOURCES</span></div>)}
       {activeTab==='Papers'&&<div className="rx-papers-panel"><div className="rx-papers-toolbar"><div><b>Your research library</b><p>Upload PDF papers to include them in this research session.</p></div><button className="rx-paper-add" onClick={onAddPaper}><Plus size={15}/> Add paper</button></div>{attached.length?<div className="rx-paper-list">{attached.map((paper)=><div className="rx-paper-row" key={paper.id}><span className="rx-paper-icon"><FileText size={17}/></span><div><b>{paper.name}</b><p>PDF · {formatFileSize(paper.size)} · Added {new Date(paper.lastModified).toLocaleDateString()}</p></div><button className="rx-paper-view" onClick={()=>openPaper(paper)}><Eye size={14}/> Open paper</button></div>)}</div>:<div className="rx-tab-empty"><FileText/><div><b>Your paper library is empty</b><p>Add a PDF research paper to keep it alongside this session. You can preview the document after uploading.</p></div><span>0 PAPERS</span></div>}</div>}
       {activeTab==='Report'&&<ResearchReportBuilder evidenceItems={allEvidence} />}
     </div>
@@ -205,6 +207,10 @@ export default function Workspace({ userName = "" }) {
   const [researchStage, setResearchStage] = useState(0);
   const [activePipeline, setActivePipeline] = useState(null);
   const [isResearching, setIsResearching] = useState(false);
+  const [researchError, setResearchError] = useState('');
+  const [lastResearchQuery, setLastResearchQuery] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState('');
   const [showTips, setShowTips] = useState(false);
   const [attached, setAttached] = useState([]);
   const [projectName, setProjectName] = useState('');
@@ -230,35 +236,74 @@ export default function Workspace({ userName = "" }) {
   useEffect(() => { try { localStorage.setItem('researchx-schedules', JSON.stringify(schedules)); } catch {} }, [schedules]);
   useEffect(() => { try { localStorage.setItem('researchx-plugin-states', JSON.stringify(pluginStates)); } catch {} }, [pluginStates]);
 
-  const submit = () => {
-    const prompt = query.trim();
+  const submit = async (queryOverride = '') => {
+    const prompt = String(queryOverride || query).trim();
     if (!prompt || isResearching) return;
     const id = activeConversationId || `${Date.now()}`;
     const existing = conversations.find(item => item.id === id);
-    const nextMessages = [...messages, { role: 'user', content: prompt, createdAt: Date.now() }];
-    const pipeline = runMockResearchPipeline({ question: prompt, documents: attached.map(({ name, size, type }) => ({ name, size, type })), options: { mode, tool: activeTool || null } });
-    setActivePipeline(pipeline);
+    const alreadyPending = messages.at(-1)?.role === 'user' && messages.at(-1)?.content === prompt;
+    const nextMessages = alreadyPending ? messages : [...messages, { role: 'user', content: prompt, createdAt: Date.now() }];
     const conversation = { id, title: existing?.title || prompt.slice(0, 54), prompt, messages: nextMessages, updatedAt: Date.now() };
     setConversations(items => [conversation, ...items.filter(item => item.id !== id)].slice(0, 30));
     setActiveConversationId(id);
     setMessages(nextMessages);
     setQuery('');
+    setLastResearchQuery(prompt);
     setSent(true);
     setResearchStage(0);
+    setActivePipeline(null);
+    setResearchError('');
+    setPdfError('');
     setIsResearching(true);
+    try {
+      const pipeline = await runResearch({
+        query: prompt,
+        mode: taskMode,
+        preference: mode,
+        tool: activeTool || null,
+        documents: attached.map(({ name, size, type }) => ({ name, size, type })),
+      });
+      setActivePipeline(pipeline);
+      const response = {
+        role: 'assistant',
+        content: pipeline.report?.executiveSummary || `ResearchX retrieved ${pipeline.sources?.length || 0} sources for this question.`,
+        topic: prompt,
+        pipeline,
+        createdAt: Date.now(),
+      };
+      const updated = [...nextMessages, response];
+      setMessages(updated);
+      setConversations(items => items.map(item => item.id === id ? { ...item, messages: updated, updatedAt: Date.now() } : item));
+      setResearchStage(4);
+    } catch (error) {
+      setResearchError(error.message || 'The research API could not complete this request.');
+    } finally {
+      setIsResearching(false);
+    }
+  };
+
+  const handleDownloadPdf = async (pipeline) => {
+    if (!pipeline?.report || pdfLoading) return;
+    setPdfLoading(true);
+    setPdfError('');
+    try {
+      await downloadResearchPdf({
+        query: pipeline.question || pipeline.report.title || 'ResearchX report',
+        report: pipeline.report,
+        sources: pipeline.sources || pipeline.report.references || [],
+      });
+    } catch (error) {
+      setPdfError(error.message || 'PDF export failed.');
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   useEffect(() => {
     if (!isResearching) return;
     const timer = window.setInterval(() => {
-      setResearchStage(stage => {
-        if (stage >= 4) {
-          window.clearInterval(timer);
-          return 4;
-        }
-        return stage + 1;
-      });
-    }, 1500);
+      setResearchStage(stage => Math.min(stage + 1, 3));
+    }, 2200);
     return () => window.clearInterval(timer);
   }, [isResearching]);
 
@@ -281,24 +326,6 @@ export default function Workspace({ userName = "" }) {
     return () => window.clearTimeout(timer);
   }, [isResearching, sent, messages]);
 
-  useEffect(() => {
-    if (!isResearching || researchStage < 4) return;
-    const timer = window.setTimeout(() => {
-      const latestUser = [...messages].reverse().find(message => message.role === 'user');
-      const response = {
-        role: 'assistant',
-        content: activePipeline?.report?.executiveSummary || `Research workflow prepared for “${latestUser?.content || 'your question'}”. This is an offline mock run with no external sources or independent verification.`, 
-        topic: latestUser?.content || 'Your research topic',
-        pipeline: activePipeline,
-        createdAt: Date.now(),
-      };
-      const updated = [...messages, response];
-      setMessages(updated);
-      setConversations(items => items.map(item => item.id === activeConversationId ? { ...item, messages: updated, updatedAt: Date.now() } : item));
-      setIsResearching(false);
-    }, 850);
-    return () => window.clearTimeout(timer);
-  }, [isResearching, researchStage, activePipeline]);
   const chooseCapability = (item) => { setActiveTool(item.label); setQuery(old => old.trim() ? old : item.prompt); };
   const reset = () => { attached.forEach(paper => { URL.revokeObjectURL(paper.url); attachedUrls.current.delete(paper.url); }); setQuery(''); setSent(false); setMessages([]); setResearchStage(0); setActivePipeline(null); setIsResearching(false); setActiveTool(''); setAttached([]); setActiveNav('New chat'); setActiveConversationId(null); setModeOpen(false); };
   const openRecent = (item) => { setQuery(''); setMessages(item.messages || [{ role: 'user', content: item.prompt || item.title }]); setSent(true); setResearchStage(4); setActivePipeline(item.messages?.find(message => message.role === 'assistant')?.pipeline || null); setIsResearching(false); setActiveNav(item.title); setActiveConversationId(item.id); };
@@ -396,7 +423,7 @@ export default function Workspace({ userName = "" }) {
             <button className="stitch-tool-icon" title="Style settings" onClick={()=>setShowTips(v=>!v)}><Palette size={17}/></button>
             <div className="stitch-mode-wrap"><button className="stitch-model-select" onClick={()=>setModeOpen(v=>!v)}><Sparkles size={16}/>{mode}<ChevronDown size={14}/></button>{modeOpen&&<div className="stitch-model-menu">{['Balanced','Deep thinking','Fast'].map(m=><button key={m} onClick={()=>{setMode(m);setModeOpen(false)}}>{m}{mode===m&&<Check size={14}/>}</button>)}</div>}</div>
             <button className="stitch-tool-icon" title="Voice input"><Mic size={18}/></button>
-            <button className="stitch-submit" disabled={!query.trim()} onClick={submit} title="Start research"><ArrowUpRight size={21}/></button>
+            <button className="stitch-submit" disabled={!query.trim() || isResearching} onClick={() => submit()} title="Start research"><ArrowUpRight size={21}/></button>
           </div>
         </div>
       </section>
@@ -405,7 +432,7 @@ export default function Workspace({ userName = "" }) {
       {showTips && <div className="stitch-tip-panel"><div><Sparkles size={17}/><b>Make your prompt powerful</b></div><p>Tell ResearchX your goal, preferred sources, scope and the format you want back.</p><button onClick={()=>{setQuery('Investigate [topic] using credible primary sources. Compare the strongest findings, note disagreements and limitations, and deliver a cited report with an executive summary.');setShowTips(false)}}>Use a research prompt <ArrowUpRight size={14}/></button></div>}
 
       <div className="rx-example-prompts">
-        <div className="rx-example-heading"><span>TRY A MOCK RESEARCH PROMPT</span><small>5 ready-to-run examples · offline demo data</small></div>
+        <div className="rx-example-heading"><span>TRY A RESEARCH PROMPT</span><small>5 suggested research questions · live web retrieval</small></div>
         <div className="rx-example-grid">
           {[
             ['Artificial Intelligence','Explain artificial intelligence, its main branches, real-world applications and limitations.'],
@@ -415,18 +442,19 @@ export default function Workspace({ userName = "" }) {
             ['Cybersecurity','Explain cybersecurity fundamentals, common threats, defensive practices and emerging challenges.']
           ].map(([label,prompt])=><button key={label} onClick={()=>{setQuery(prompt);setActiveTool('Deep Research');}}><span>{label}</span><p>{prompt}</p><ArrowUpRight size={14}/></button>)}
         </div>
-        <p className="rx-example-disclaimer">These examples use bundled illustrative mock knowledge packs. They demonstrate the workflow and are not live web research or verified sources.</p>
+        <p className="rx-example-disclaimer">Questions are researched live. AI-generated analysis can contain errors; inspect the linked sources.</p>
       </div>
       <div className="stitch-capabilities-label">START WITH A CAPABILITY</div>
       <div className="stitch-capabilities">{capabilities.map(({label,icon:Icon},i)=><button key={label} className={activeTool===label?'active':''} onClick={()=>chooseCapability(capabilities[i])}><span><Icon size={17}/></span>{label}<ArrowUpRight size={13}/></button>)}</div>
       <div className="stitch-bottom-note"><span className="stitch-orbit"><i/><i/><i/></span><span>Think deeper. Discover more. Build what matters.</span></div>
     </main> : <main className="stitch-results" ref={resultsRef}>
       <div className="stitch-results-top"><span><Sparkles size={15}/> RESEARCH SESSION</span><button onClick={reset}><Plus size={15}/> New session</button></div>
-      <div className="rx-session-thread">{messages.map((message, index) => <article className={`rx-chat-message ${message.role}`} key={`${message.createdAt || index}-${index}`}><span className="rx-message-avatar">{message.role === 'user' ? 'R' : <Sparkles size={15}/>}</span><div><small>{message.role === 'user' ? 'YOU' : 'RESEARCHX'}</small><p>{message.content}</p>{message.role === 'assistant' && <ResearchReportPreview reportRef={reportRef} topic={message.topic || message.content} pipeline={message.pipeline}/>}</div></article>)}</div>
-      {isResearching && <><div className="stitch-progress"><i/><i/><i/><i/></div><div className="stitch-agent-grid" ref={agentGridRef}>{[{icon:Search,name:'Researcher',desc:'Mapping the question and identifying useful source types',stage:'01 · DISCOVER'},{icon:BookOpen,name:'Analyst',desc:'Planning how findings and limitations will be compared',stage:'02 · ANALYSE'},{icon:Atom,name:'Fact-checker',desc:'Preparing evidence checks and contradiction review',stage:'03 · VERIFY'},{icon:FileText,name:'Report writer',desc:'Organising the final report structure',stage:'04 · SYNTHESISE'}].map((agent,index)=>{const Icon=agent.icon;const done=researchStage>index;const active=researchStage===index;return <article className={`${done?'is-done':''} ${active?'is-active':''}`} key={agent.name}><div className="rx-agent-status">{done?<Check size={15}/>:active?<span className="rx-agent-spinner"/>:<Icon size={17}/>}</div><b>{agent.name}</b><p>{done && activePipeline?.stages?.[index]?.summary ? activePipeline.stages[index].summary : agent.desc}</p><small>{agent.stage} · {done?'COMPLETE':active?'WORKING':'QUEUED'}</small>{done && activePipeline?.stages?.[index]?.output && <details className="rx-agent-output"><summary>View structured output</summary><pre>{JSON.stringify(activePipeline.stages[index].output, null, 2)}</pre></details>}</article>})}</div><p className="stitch-prototype-note">Interactive workflow preview · Live search, source retrieval and citation verification will be connected in the backend phase.</p></>}
-      {!isResearching && messages.some(message=>message.role==='assistant') && <div className="rx-report-actions"><span><Check size={14}/> Preview response ready</span><button onClick={()=>{const last=messages.filter(m=>m.role==='assistant').at(-1);if(last)navigator.clipboard?.writeText(last.content)}}>Copy response</button></div>}
+      <div className="rx-session-thread">{messages.map((message, index) => <article className={`rx-chat-message ${message.role}`} key={`${message.createdAt || index}-${index}`}><span className="rx-message-avatar">{message.role === 'user' ? 'R' : <Sparkles size={15}/>}</span><div><small>{message.role === 'user' ? 'YOU' : 'RESEARCHX'}</small><p>{message.content}</p>{message.role === 'assistant' && <ResearchReportPreview reportRef={reportRef} topic={message.topic || message.content} pipeline={message.pipeline} onDownloadPdf={()=>handleDownloadPdf(message.pipeline)} pdfLoading={pdfLoading} pdfError={pdfError}/>}</div></article>)}</div>
+      {isResearching && <><div className="stitch-progress"><i/><i/><i/><i/></div><div className="stitch-agent-grid" ref={agentGridRef}>{[{icon:Search,name:'Researcher',desc:'Mapping the question and identifying useful source types',stage:'01 · DISCOVER'},{icon:BookOpen,name:'Analyst',desc:'Planning how findings and limitations will be compared',stage:'02 · ANALYSE'},{icon:Atom,name:'Fact-checker',desc:'Preparing evidence checks and contradiction review',stage:'03 · VERIFY'},{icon:FileText,name:'Report writer',desc:'Organising the final report structure',stage:'04 · SYNTHESISE'}].map((agent,index)=>{const Icon=agent.icon;const done=researchStage>index;const active=researchStage===index;return <article className={`${done?'is-done':''} ${active?'is-active':''}`} key={agent.name}><div className="rx-agent-status">{done?<Check size={15}/>:active?<span className="rx-agent-spinner"/>:<Icon size={17}/>}</div><b>{agent.name}</b><p>{done && activePipeline?.stages?.[index]?.summary ? activePipeline.stages[index].summary : agent.desc}</p><small>{agent.stage} · {done?'COMPLETE':active?'WORKING':'QUEUED'}</small>{done && activePipeline?.stages?.[index]?.output && <details className="rx-agent-output"><summary>View structured output</summary><pre>{JSON.stringify(activePipeline.stages[index].output, null, 2)}</pre></details>}</article>})}</div><p className="stitch-prototype-note">Live workflow · Tavily source retrieval and Gemini synthesis are running. Independent verification still requires human review.</p></>}
+      {researchError && <div className="rx-research-error"><b>Research request failed</b><p>{researchError}</p><small>Check that the backend is running and both provider keys are configured.</small><button type="button" onClick={() => submit(lastResearchQuery)}>Retry research</button></div>}
+      {!isResearching && messages.some(message=>message.role==='assistant') && <div className="rx-report-actions"><span><Check size={14}/> Research response ready</span><button onClick={()=>{const last=messages.filter(m=>m.role==='assistant').at(-1);if(last)navigator.clipboard?.writeText(last.content)}}>Copy response</button></div>}
       {!isResearching && messages.some(message=>message.role==='assistant') && <ResearchWorkspaceTabs attached={attached} pipeline={messages.filter(m=>m.role==='assistant').at(-1)?.pipeline || activePipeline} onAddPaper={()=>fileRef.current?.click()}/>}
-      <div className="stitch-followup"><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}}} placeholder="Ask a follow-up or refine your research..."/><button disabled={!query.trim()||isResearching} onClick={submit}><Send size={17}/></button></div>
+      <div className="stitch-followup"><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}}} placeholder="Ask a follow-up or refine your research..."/><button disabled={!query.trim()||isResearching} onClick={() => submit()}><Send size={17}/></button></div>
     </main>}
 
     </div>

@@ -21,7 +21,7 @@ npm run preview
 - Existing ResearchX landing page and workspace visual design
 - Interactive full-window dotted background and prompt-card neon treatment
 - Collapsible sidebar with a persistent reopen control
-- New chat, recent conversation list, search, and simulated research progress
+- New chat, recent conversation list, search, and live research progress
 - Research and Web mode selection, model preference selection, and capability prompt starters
 - PDF selection and in-session browser PDF preview
 - Research workspace tabs: Overview, Sources, Papers, Findings, Verification, Report
@@ -30,11 +30,11 @@ npm run preview
 
 ## Important current limitations
 
-This is a frontend prototype. It does not yet perform live web retrieval, AI reasoning, automatic PDF text extraction, OCR, source authentication, automatic contradiction detection, or verified citation generation.
+The React/Vite frontend now connects to an optional FastAPI service for live Tavily web retrieval, Gemini research synthesis, and PDF report export. Automatic PDF text extraction/OCR and independent source authentication are not implemented. AI-generated findings and citations must be checked against the linked sources.
 
 Conversation metadata and evidence entries use `localStorage`. PDF previews currently use temporary object URLs and selected files are not durably stored across refreshes. That is a known task for the next frontend functionality pass (IndexedDB-backed document storage).
 
-Research progress and agent stages are simulated. They must remain clearly labelled as previews until the real backend is integrated.
+Live research progress is driven by backend results. The offline demo pipeline remains available as a local reference, but it is no longer used for live workspace submissions.
 
 ## Project principles
 
@@ -98,4 +98,69 @@ Follow the prompts, then run `npx vercel --prod` for production deployment.
 
 ### Current scope
 
-This is a static React/Vite frontend using local mock research data. Vercel deployment does not add live AI research, web search, backend APIs, or persistent user accounts. Browser-local data remains local to each visitor's browser.
+The Vercel configuration deploys the static React/Vite frontend. Live AI research requires the separately deployed FastAPI service described above. Browser-local conversation and evidence data remain local to each visitor's browser.
+
+## Live research API integration
+
+The frontend remains at the repository root. The Python API is a separate service in `backend/`; it does not replace the existing React workspace or modular demo pipeline.
+
+### Providers
+
+- **Tavily** retrieves web sources for the Researcher stage.
+- **Google Gemini** plans search directions and synthesises retrieved source material into the existing report structure.
+- **ReportLab** exports the generated report and source links as a PDF.
+
+### Configure the backend
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+If `backend/.env` does not already exist, create it by copying `backend/.env.example`. If it already exists, keep it: do not overwrite your existing API keys. Add or verify `TAVILY_API_KEY` and `GEMINI_API_KEY` there. Keep this file private and out of Git.
+
+Start the API from the repository root:
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+```
+
+API health and interactive docs:
+
+- `http://localhost:8000/api/health`
+- `http://localhost:8000/docs`
+
+### Configure the frontend
+
+If a root `.env` file does not already exist, create it from `.env.example`. Do not overwrite an existing file. It should contain:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+Then, in a second terminal from the repository root:
+
+```bash
+npm install
+npm run dev
+```
+
+### API endpoints
+
+- `GET /api/health` — provider configuration status (never returns API keys).
+- `POST /api/research` — Tavily retrieval and Gemini synthesis using the workspace research-pipeline response shape.
+- `POST /api/research/pdf` — export the structured report and source list as a PDF.
+
+### Deployment note
+
+The included Vercel configuration deploys the static Vite frontend only. Deploy the FastAPI service separately, then set the Vercel environment variable `VITE_API_URL` to the deployed API origin and configure `FRONTEND_ORIGINS` on the backend.
+
+### Remaining research limitations
+
+- Uploaded PDFs are previewed in the browser but are not yet uploaded to or extracted by the backend.
+- Gemini source-based synthesis is not an independent fact-check.
+- Source quality, publication status and citation support still require human review.

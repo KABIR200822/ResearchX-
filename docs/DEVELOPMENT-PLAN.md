@@ -37,3 +37,15 @@ A requirement is complete only when demonstrated end-to-end with real services a
 - `ResearchReport`: id, sessionId, sections, findingIds, citationIds, status, generatedAt
 
 These are planned contracts, not claims about existing runtime functionality.
+
+## Live API integration status
+
+The `feature/live-research-integration` branch adds the first live integration pass while retaining the root React/Vite application and the existing `backend/agents` package:
+
+- Tavily multi-query retrieval is connected to the Researcher stage.
+- Retrieved excerpts are registered and checked for traceability by the existing Python agent modules.
+- Gemini plans searches and generates a source-grounded structured report.
+- The existing workspace displays live source references and findings.
+- ReportLab exports the report and source list to PDF.
+
+Still outstanding: PDF upload/extraction/OCR, durable document storage, independent source authentication, citation-support validation, and full end-to-end local testing.
