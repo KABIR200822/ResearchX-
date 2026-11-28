@@ -117,7 +117,7 @@ async def gemini_generate(
 def _parse_json(raw: str) -> dict[str, Any]:
     text = raw.strip()
     if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*|\s*\```$", "", text, flags=re.I)
+        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.I)
     value = json.loads(text)
     if not isinstance(value, dict):
         raise ValueError("Gemini returned JSON in an unexpected format.")
