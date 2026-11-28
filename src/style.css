@@ -716,3 +716,16 @@ button.rx-library-row:hover{border-color:#df744b;background:#202023}
 .rx-example-disclaimer{font-size:11px;color:#85858d;line-height:1.5;margin:10px 0 0}
 @media(max-width:1050px){.rx-example-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.rx-example-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rx-example-grid button{min-height:118px}.rx-example-heading{align-items:flex-start;flex-direction:column;gap:5px}}
+
+
+/* Live research API states and report actions */
+.rx-report-preview-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.rx-report-preview-actions>button{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #3a3a3a;border-radius:9px;background:#171717;color:#f5f5f5;font-size:12px;cursor:pointer;transition:background .2s,border-color .2s}
+.rx-report-preview-actions>button:hover{background:#252525;border-color:#e8420b}
+.rx-report-preview-actions>button:disabled{opacity:.55;cursor:wait}
+.rx-report-source-list article a{display:inline-block;margin-top:7px;color:#e6a17f;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.rx-research-error{margin:20px 0;padding:18px 20px;border:1px solid #743b2a;border-radius:12px;background:#21130f;color:#f5e9e4}
+.rx-research-error p{margin:7px 0;color:#e6c9bc;line-height:1.6}
+.rx-research-error small{color:#bca69c}
+.rx-research-error button{display:inline-flex;margin-top:12px;padding:8px 13px;border:1px solid #91513a;border-radius:8px;background:#2a1a14;color:#fff;cursor:pointer}
+@media(max-width:620px){.rx-report-preview-actions{align-items:flex-end;flex-direction:column}.rx-report-preview-actions>button{font-size:11px;padding:8px 10px}}
