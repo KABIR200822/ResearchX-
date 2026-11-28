@@ -20,6 +20,7 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
+from agents import AnalystAgent, FactCheckerAgent, ReportWriterAgent, ResearcherAgent
 from reportlab.platypus import (
     HRFlowable,
     ListFlowable,
@@ -397,6 +398,27 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
         if not sources:
             raise HTTPException(status_code=404, detail="Tavily returned no usable sources. Try a more specific query.")
 
+        # Feed retrieved Tavily material through the repository's existing
+        # specialist-agent modules instead of bypassing the established pipeline.
+        agent_documents = [
+            {
+                "id": source["id"],
+                "title": source["title"],
+                "content": source["excerpt"],
+                "origin": "tavily",
+                "url": source["url"],
+            }
+            for source in sources
+        ]
+        research_agent = ResearcherAgent().run(question, agent_documents)
+        analysis_agent = AnalystAgent().run(question, research_agent["documents"])
+        verification_agent = FactCheckerAgent().run(
+            analysis_agent["findings"], research_agent["documents"]
+        )
+        draft_agent = ReportWriterAgent().run(
+            question, analysis_agent, verification_agent, research_agent["documents"]
+        )
+
         report = fallback_report(question, sources)
         synthesis_used = False
         synthesis_error = None
@@ -418,28 +440,33 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
             "name": "Researcher",
             "status": "complete",
             "summary": f"Tavily searched {len(queries)} focused queries and collected {len(sources)} unique sources.",
-            "output": {"queries": queries, "sources": sources},
+            "output": {**research_agent, "queries": queries, "sources": sources},
         },
         {
             "id": "analyst",
             "name": "Analyst",
             "status": "complete" if synthesis_used else "partial",
             "summary": "Gemini synthesised findings and compared source perspectives." if synthesis_used else "Source summaries are available; Gemini synthesis did not complete.",
-            "output": {"executiveSummary": report["executiveSummary"], "sections": report["sections"], "findings": report["findings"]},
+            "output": {
+                "executiveSummary": report["executiveSummary"],
+                "sections": report["sections"],
+                "findings": report["findings"],
+                "sourceExcerptAnalysis": analysis_agent,
+            },
         },
         {
             "id": "fact-checker",
             "name": "Fact-checker",
             "status": "partial",
-            "summary": "Cross-source comparison is included; independent verification remains outstanding.",
-            "output": {"verificationSummary": report["verificationSummary"], "limitations": report["limitations"]},
+            "summary": f"Checked traceability for {len(verification_agent['checks'])} source observations; factual verification remains outstanding.",
+            "output": verification_agent,
         },
         {
             "id": "report-writer",
             "name": "Report writer",
             "status": "complete" if synthesis_used else "partial",
             "summary": "Prepared the research report with linked source references.",
-            "output": report,
+            "output": {"report": report, "traceabilityDraft": draft_agent},
         },
     ]
     if synthesis_error:
