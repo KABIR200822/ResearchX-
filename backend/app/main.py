@@ -1,21 +1,29 @@
 from __future__ import annotations
 
 import asyncio
+import html
+import io
 import json
 import os
+import re
 from typing import Any
 
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import HRFlowable, ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer
 from pydantic import BaseModel, Field
 
 load_dotenv()
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
-EXA_API_KEY = os.getenv("EXA_API_KEY", "").strip()
-SEARCH_PROVIDER = os.getenv("SEARCH_PROVIDER", "tavily").strip().lower()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
 
@@ -45,6 +53,17 @@ app.add_middleware(
 class ResearchRequest(BaseModel):
     query: str = Field(min_length=3, max_length=1200)
     mode: str = Field(default="Research", max_length=40)
+
+
+class PDFSource(BaseModel):
+    title: str = Field(default="Source", max_length=500)
+    url: str = Field(max_length=2000)
+
+
+class PDFReportRequest(BaseModel):
+    query: str = Field(min_length=3, max_length=1200)
+    report: str = Field(min_length=1, max_length=100000)
+    sources: list[PDFSource] = Field(default_factory=list, max_length=30)
 
 
 async def gemini_generate(
@@ -134,41 +153,6 @@ async def tavily_search(
     return data.get("results", [])
 
 
-async def exa_search(
-    client: httpx.AsyncClient,
-    query: str,
-) -> list[dict[str, Any]]:
-    if not EXA_API_KEY:
-        raise RuntimeError("EXA_API_KEY is not configured.")
-
-    response = await client.post(
-        "https://api.exa.ai/search",
-        headers={"x-api-key": EXA_API_KEY},
-        json={
-            "query": query,
-            "type": "auto",
-            "numResults": 5,
-            "contents": {"highlights": True},
-        },
-    )
-    response.raise_for_status()
-    data = response.json()
-
-    normalized: list[dict[str, Any]] = []
-    for item in data.get("results", []):
-        highlights = item.get("highlights") or []
-        content = " ".join(str(part) for part in highlights if part)
-        normalized.append(
-            {
-                "title": item.get("title") or "Untitled source",
-                "url": item.get("url") or "",
-                "content": content or item.get("text") or item.get("summary") or "",
-                "published_date": item.get("publishedDate") or "",
-            }
-        )
-    return normalized
-
-
 def make_source_list(results: list[dict[str, Any]]) -> list[dict[str, str]]:
     sources: list[dict[str, str]] = []
     seen: set[str] = set()
@@ -215,15 +199,120 @@ def fallback_report(question: str, sources: list[dict[str, str]]) -> str:
     return "\n".join(lines)
 
 
+def markdown_inline(value: str) -> str:
+    escaped = html.escape(value, quote=False)
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escaped)
+    escaped = re.sub(r"\*(.+?)\*", r"<i>\1</i>", escaped)
+    escaped = re.sub(r"`(.+?)`", r"<font name='Courier'>\1</font>", escaped)
+    escaped = re.sub(
+        r"\[([^\]]+)\]\((https?://[^\s)]+)\)",
+        r"<link href='\2' color='#2457A6'>\1</link>",
+        escaped,
+    )
+    return escaped
+
+
+def markdown_to_pdf_story(report: str, styles: Any) -> list[Any]:
+    story: list[Any] = []
+    bullets: list[str] = []
+
+    def flush_bullets() -> None:
+        nonlocal bullets
+        if bullets:
+            items = [ListItem(Paragraph(markdown_inline(item), styles["BodyText"])) for item in bullets]
+            story.append(ListFlowable(items, bulletType="bullet", leftIndent=18))
+            story.append(Spacer(1, 4))
+            bullets = []
+
+    for raw_line in report.splitlines():
+        line = raw_line.strip()
+        if not line:
+            flush_bullets()
+            story.append(Spacer(1, 3))
+        elif line.startswith(("- ", "* ")):
+            bullets.append(line[2:].strip())
+        else:
+            flush_bullets()
+            if line.startswith("### "):
+                story.append(Paragraph(markdown_inline(line[4:]), styles["Heading3"]))
+            elif line.startswith("## "):
+                story.append(Paragraph(markdown_inline(line[3:]), styles["Heading2"]))
+            elif line.startswith("# "):
+                story.append(Paragraph(markdown_inline(line[2:]), styles["Heading1"]))
+            else:
+                numbered = re.match(r"^\d+[.)]\s+(.*)$", line)
+                content = "• " + numbered.group(1) if numbered else line
+                story.append(Paragraph(markdown_inline(content), styles["BodyText"]))
+    flush_bullets()
+    return story
+
+
+@app.post("/api/research/pdf")
+async def download_research_pdf(request: PDFReportRequest) -> StreamingResponse:
+    buffer = io.BytesIO()
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(
+        name="ResearchXTitle", parent=styles["Title"], fontName="Helvetica-Bold",
+        fontSize=20, leading=25, alignment=TA_CENTER,
+        textColor=colors.HexColor("#172033"), spaceAfter=8,
+    ))
+    styles.add(ParagraphStyle(
+        name="ResearchXSubtitle", parent=styles["Normal"], fontSize=9,
+        textColor=colors.HexColor("#64748b"), alignment=TA_CENTER, spaceAfter=16,
+    ))
+    styles["Heading1"].textColor = colors.HexColor("#172033")
+    styles["Heading2"].textColor = colors.HexColor("#2457A6")
+    styles["Heading3"].textColor = colors.HexColor("#334155")
+    styles["BodyText"].leading = 15
+    styles["BodyText"].spaceAfter = 6
+
+    document = SimpleDocTemplate(
+        buffer, pagesize=A4, rightMargin=19 * mm, leftMargin=19 * mm,
+        topMargin=18 * mm, bottomMargin=18 * mm,
+        title=f"ResearchX - {request.query[:100]}", author="ResearchX",
+    )
+    story: list[Any] = [
+        Paragraph("RESEARCHX", ParagraphStyle(
+            name="ResearchXBrand", parent=styles["Normal"], alignment=TA_CENTER,
+            fontName="Helvetica-Bold", fontSize=10,
+            textColor=colors.HexColor("#64748b"), spaceAfter=10,
+        )),
+        Paragraph("Research Report", styles["ResearchXTitle"]),
+        Paragraph(markdown_inline(request.query), styles["ResearchXSubtitle"]),
+        HRFlowable(width="100%", thickness=0.8, color=colors.HexColor("#dbe2ea")),
+        Spacer(1, 12),
+    ]
+    story.extend(markdown_to_pdf_story(request.report, styles))
+    if request.sources:
+        story.extend([
+            Spacer(1, 14),
+            HRFlowable(width="100%", thickness=0.6, color=colors.HexColor("#dbe2ea")),
+            Paragraph("Sources", styles["Heading1"]),
+        ])
+        for index, source in enumerate(request.sources, start=1):
+            url = html.escape(source.url, quote=True)
+            story.append(Paragraph(
+                f"[{index}] <link href='{url}' color='#2457A6'>{markdown_inline(source.title)}</link>",
+                styles["BodyText"],
+            ))
+
+    document.build(story)
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="researchx-report.pdf"'},
+    )
+
+
 @app.get("/api/health")
 async def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "service": "ResearchX API",
-        "search_provider": SEARCH_PROVIDER,
+        "search_provider": "tavily",
         "providers": {
             "tavily_configured": bool(TAVILY_API_KEY),
-            "exa_configured": bool(EXA_API_KEY),
             "gemini_configured": bool(GEMINI_API_KEY),
         },
     }
@@ -235,25 +324,12 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
     if len(question) < 3:
         raise HTTPException(status_code=422, detail="Enter a longer research question.")
 
-    if SEARCH_PROVIDER == "exa":
-        search_function = exa_search
-        if not EXA_API_KEY:
-            raise HTTPException(
-                status_code=503,
-                detail="Exa is selected but EXA_API_KEY is missing from backend/.env.",
-            )
-    elif SEARCH_PROVIDER == "tavily":
-        search_function = tavily_search
-        if not TAVILY_API_KEY:
-            raise HTTPException(
-                status_code=503,
-                detail="Tavily is selected but TAVILY_API_KEY is missing from backend/.env.",
-            )
-    else:
+    if not TAVILY_API_KEY:
         raise HTTPException(
-            status_code=500,
-            detail="SEARCH_PROVIDER must be either 'exa' or 'tavily'.",
+            status_code=503,
+            detail="TAVILY_API_KEY is missing from backend/.env.",
         )
+    search_function = tavily_search
 
     timeout = httpx.Timeout(45.0, connect=15.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
@@ -265,11 +341,11 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
             if status in (401, 403):
-                detail = f"{SEARCH_PROVIDER.title()} rejected the API key or its permissions. Check the selected provider key."
+                detail = "Tavily rejected the API key or its permissions. Check TAVILY_API_KEY."
             elif status == 429:
-                detail = f"{SEARCH_PROVIDER.title()} rate limit or usage quota reached. Try again later."
+                detail = "Tavily rate limit or usage quota reached. Try again later."
             else:
-                detail = f"{SEARCH_PROVIDER.title()} search failed with HTTP {status}."
+                detail = f"Tavily search failed with HTTP {status}."
             raise HTTPException(status_code=502, detail=detail) from exc
         except (httpx.HTTPError, RuntimeError) as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -322,7 +398,7 @@ async def research(request: ResearchRequest) -> dict[str, Any]:
         ],
         "agents": [
             {"name": "Research planner", "status": "complete", "detail": f"Prepared {len(queries)} search directions."},
-            {"name": "Web researcher", "status": "complete", "detail": f"Collected {len(sources)} unique sources using {SEARCH_PROVIDER.title()}."},
+            {"name": "Web researcher", "status": "complete", "detail": f"Collected {len(sources)} unique sources using Tavily."},
             {"name": "Evidence analyst", "status": "complete" if synthesis_used else "partial", "detail": "Compared source evidence and uncertainty." if synthesis_used else "AI analysis is unavailable; showing source summaries."},
             {"name": "Report writer", "status": "complete" if synthesis_used else "partial", "detail": "Generated a cited research report." if synthesis_used else "Showing search results without AI synthesis."},
         ],
