@@ -29,7 +29,13 @@
 </div>
 
 ---
-
+TEAM MEMBERS:
+1.  Kabir Chirag Muni (USN: 2392608023)
+2.  Mantena Mourya Raghava Varma (USN: 2392608115)
+3.  Chandan Ganta (USN: 2392608118)
+4.  Krishna Vidhyarthi (USN: 2392608245)
+5.  Shaswat Vibhu (USN: 2392608030)
+6.  Karthik Swamy (USN: 2392608036)
 ## Contents
 
 - [Overview](#-overview)
