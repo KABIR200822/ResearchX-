@@ -1,6 +1,6 @@
 # ResearchX backend
 
-FastAPI service for web research, source collection and Gemini AI synthesis.
+FastAPI service for web research, Gemini synthesis and downloadable PDF reports.
 
 ## Setup
 
@@ -14,34 +14,16 @@ cp .env.example .env
 
 Add your API keys to `.env`. Keep this file private; it is ignored by Git.
 
-### Search provider
+## API configuration
 
-Set `SEARCH_PROVIDER` to either `exa` or `tavily`.
-
-For Exa:
+ResearchX uses **Tavily** to discover web sources and **Gemini** to plan searches, summarize evidence and write the final report.
 
 ```env
-SEARCH_PROVIDER=exa
-EXA_API_KEY=your_exa_api_key
-```
-
-For Tavily:
-
-```env
-SEARCH_PROVIDER=tavily
 TAVILY_API_KEY=your_tavily_api_key
-```
-
-Only the key for the selected search provider is required. ResearchX uses Exa's Search API with highlights or Tavily's Search API, then passes the normalized source material to Gemini for synthesis.
-
-### Gemini
-
-```env
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-3.8-flash
+FRONTEND_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
-
-Gemini is optional. Without it, the API returns the collected source summaries without AI synthesis.
 
 ## Run
 
@@ -51,8 +33,10 @@ uvicorn app.main:app --reload --port 8000
 
 Health check: `http://127.0.0.1:8000/api/health`
 
-Research endpoint: `POST http://127.0.0.1:8000/api/research` with:
+Research endpoint: `POST /api/research`
 
 ```json
 {"query":"your research question","mode":"Research"}
 ```
+
+PDF export: `POST /api/research/pdf`. Send the research query, generated Markdown report and source list. The endpoint returns an A4 PDF attachment.
