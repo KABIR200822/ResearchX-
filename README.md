@@ -30,7 +30,7 @@ npm run preview
 
 ## Important current limitations
 
-This is a frontend prototype. It does not yet perform live web retrieval, AI reasoning, automatic PDF text extraction, OCR, source authentication, automatic contradiction detection, or verified citation generation.
+The React/Vite frontend now connects to an optional FastAPI service for live Tavily web retrieval, Gemini research synthesis, and PDF report export. Automatic PDF text extraction/OCR and independent source authentication are not implemented. AI-generated findings and citations must be checked against the linked sources.
 
 Conversation metadata and evidence entries use `localStorage`. PDF previews currently use temporary object URLs and selected files are not durably stored across refreshes. That is a known task for the next frontend functionality pass (IndexedDB-backed document storage).
 
@@ -99,3 +99,69 @@ Follow the prompts, then run `npx vercel --prod` for production deployment.
 ### Current scope
 
 This is a static React/Vite frontend using local mock research data. Vercel deployment does not add live AI research, web search, backend APIs, or persistent user accounts. Browser-local data remains local to each visitor's browser.
+
+## Live research API integration
+
+The frontend remains at the repository root. The Python API is a separate service in `backend/`; it does not replace the existing React workspace or modular demo pipeline.
+
+### Providers
+
+- **Tavily** retrieves web sources for the Researcher stage.
+- **Google Gemini** plans search directions and synthesises retrieved source material into the existing report structure.
+- **ReportLab** exports the generated report and source links as a PDF.
+
+### Configure the backend
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Add your own `TAVILY_API_KEY` and `GEMINI_API_KEY` to `backend/.env`. Keep this file private and out of Git.
+
+Start the API from the repository root:
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+```
+
+API health and interactive docs:
+
+- `http://localhost:8000/api/health`
+- `http://localhost:8000/docs`
+
+### Configure the frontend
+
+Create a root `.env` file containing:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+Then, in a second terminal from the repository root:
+
+```bash
+npm install
+npm run dev
+```
+
+### API endpoints
+
+- `GET /api/health` — provider configuration status (never returns API keys).
+- `POST /api/research` — Tavily retrieval and Gemini synthesis using the workspace research-pipeline response shape.
+- `POST /api/research/pdf` — export the structured report and source list as a PDF.
+
+### Deployment note
+
+The included Vercel configuration deploys the static Vite frontend only. Deploy the FastAPI service separately, then set the Vercel environment variable `VITE_API_URL` to the deployed API origin and configure `FRONTEND_ORIGINS` on the backend.
+
+### Remaining research limitations
+
+- Uploaded PDFs are previewed in the browser but are not yet uploaded to or extracted by the backend.
+- Gemini source-based synthesis is not an independent fact-check.
+- Source quality, publication status and citation support still require human review.
