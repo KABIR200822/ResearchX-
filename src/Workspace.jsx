@@ -123,7 +123,7 @@ function ResearchWorkspaceTabs({ attached = [], pipeline = null, onAddPaper = ()
   const pipelineFindings = (pipeline?.report?.findings || []).map((item, index) => ({ id: `pipeline-${pipeline.id}-${item.id || index}`, claim: item.claim, source: item.source || 'AI synthesis · review linked sources', stance: 'context', note: item.detail || 'Generated finding. Review its linked source material.', demo: pipeline?.mode !== 'live', category: item.category || 'Research finding' }));
   const allEvidence = [...pipelineFindings, ...evidenceItems];
   const demoSources = pipeline?.report?.demoMaterials || [];
-  const externalSources = pipeline?.report?.references || pipeline?.sources || [];
+  const externalSources = pipeline?.sources || pipeline?.report?.references || [];
   const evidenceCounts = allEvidence.reduce((counts, item) => { counts[item.stance] = (counts[item.stance] || 0) + 1; return counts; }, {});
   const visibleEvidence = allEvidence.filter(item => evidenceFilter === 'all' || item.stance === evidenceFilter);
   const [selectedPaper, setSelectedPaper] = useState(null);
