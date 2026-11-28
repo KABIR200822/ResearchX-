@@ -77,6 +77,7 @@ export default function Workspace() {
   const [loading, setLoading] = useState(false);
   const [researchResult, setResearchResult] = useState(null);
   const [researchError, setResearchError] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [showTips, setShowTips] = useState(false);
   const [attached, setAttached] = useState([]);
   const [projectName, setProjectName] = useState('');
@@ -104,6 +105,40 @@ export default function Workspace() {
       setResearchError(error.message || 'Could not connect to the ResearchX API.');
     } finally {
       setLoading(false);
+    }
+  };
+  const downloadPdf = async () => {
+    if (!researchResult || pdfLoading) return;
+    setPdfLoading(true);
+    setResearchError('');
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBase}/api/research/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: researchResult.query,
+          report: researchResult.report,
+          sources: researchResult.sources.map(({ title, url }) => ({ title, url })),
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'PDF export failed. Check the backend and try again.');
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = 'researchx-report.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      setResearchError(error.message || 'Could not generate the PDF report.');
+    } finally {
+      setPdfLoading(false);
     }
   };
   const chooseCapability = (item) => { setActiveTool(item.label); setQuery(old => old.trim() ? old : item.prompt); };
@@ -207,7 +242,7 @@ export default function Workspace() {
       {loading && <p className="stitch-prototype-note">ResearchX is searching sources and preparing your report. This can take a little while.</p>}
       {researchError && <div className="rx-research-error"><b>Research could not be completed</b><p>{researchError}</p><small>Check the backend terminal and your API keys, then try again.</small></div>}
       {researchResult && <section className="rx-research-report">
-        <div className="rx-report-heading"><h2>Research report</h2><span>{researchResult.sources.length} sources</span></div>
+        <div className="rx-report-heading"><h2>Research report</h2><div className="rx-report-actions"><span>{researchResult.sources.length} sources</span><button type="button" onClick={downloadPdf} disabled={pdfLoading}><Download size={15}/>{pdfLoading ? 'Generating PDF…' : 'Download PDF'}</button></div></div>
         <pre>{researchResult.report}</pre>
         <div className="rx-source-list"><h3>Sources</h3>{researchResult.sources.map(source=><a key={source.url} href={source.url} target="_blank" rel="noreferrer"><span>[{source.index}] {source.title}</span><ArrowUpRight size={14}/></a>)}</div>
       </section>}
